@@ -484,6 +484,10 @@ const Converter = () => {
                         </div>
                     </div>
                 </div>
+
+                <button className="flex-1 mt-[25px] md:[51px] rounded-[12px] bg-[#3DBEA3] w-full p-[16px_72px] text-center text-white text-base font-normal transition-all duration-200 cursor-pointer">
+                    Exchange
+                </button>
             </div>
         </div>
     )

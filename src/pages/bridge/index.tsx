@@ -1,12 +1,9 @@
-import {
-    ArrowRight,
-    ChevronDown,
-    CircleQuestionMarkIcon,
-} from 'lucide-react'
+import { ChevronDown, CircleQuestionMarkIcon } from 'lucide-react'
 import { useState } from 'react'
 import AskExpertsSection from '../../components/AskExpertsSection'
 import EarnPassiveIncomeSection from '../../components/EarnPassiveIncomeSection'
 import WalletButton from '../../components/WalletButton'
+import JoinCommunity from '../../components/JoinCommunity'
 interface DropdownStates {
     fromToken: boolean
     fromChain: boolean
@@ -167,14 +164,7 @@ const Bridge = () => {
         <>
             <div className="hero-section">
                 <div className="flex-grow flex flex-col items-center px-4 pt-[40px] md:pt-[88px] container mx-auto w-full">
-                    <button
-                        aria-label="Join our community"
-                        className="flex items-center gap-4 text-black font-normal text-[14.29px] leading-[15.84px] bg-white border border-[#eaeaea] rounded-full px-[15px] py-2 mb-5 transition"
-                    >
-                        <span>⚡</span>
-                        <span>Join our community</span>
-                        <ArrowRight className="w-4 h-4" />
-                    </button>
+                    <JoinCommunity />
                     <h1 className="font-semibold text-[40px] leading-[48px] md:text-[80px] md:leading-[88px] align-middle capitalize mb-3 text-[#3DBEA3] max-w-[720px] text-center mx-auto">
                         <span className="text-[#2A8576]"> Bridge </span>{' '}
                         Exchange with DEX.
@@ -186,7 +176,7 @@ const Bridge = () => {
                         maximum efficiency.
                     </p>
                     <WalletButton />
-                    
+
                     <div className="hero-border mt-[100px] mb-[53px] w-full p-[3.5px] md:rounded-[40px] rounded-[20px]">
                         <div className="bg-[linear-gradient(105.87deg,_rgba(0,0,0,0.2)_3.04%,_rgba(0,0,0,0)_96.05%)] relative backdrop-blur-[80px] w-full md:rounded-[40px] rounded-[20px] px-[15px] md:px-[50px] py-[20px] md:py-[60px]">
                             <div className="flex flex-col md:flex-row justify-between items-center gap-[25px] md:gap-[51px]">
@@ -689,6 +679,9 @@ const Bridge = () => {
                                     </div>
                                 </div>
                             </div>
+                            <button className="flex-1 mt-[25px] md:[51px] rounded-[12px] bg-[#3DBEA3] w-full p-[16px_72px] text-center text-white text-base font-normal transition-all duration-200 cursor-pointer">
+                                Exchange
+                            </button>
                         </div>
                     </div>
                 </div>

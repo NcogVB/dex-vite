@@ -1,13 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import TradingDashboard from '../../components/TradingDashboard'
-import {
-    ArrowRight,
-    ChevronDown,
-    CircleQuestionMarkIcon,
-} from 'lucide-react'
+import { ChevronDown, CircleQuestionMarkIcon } from 'lucide-react'
 import EarnPassiveIncomeSection from '../../components/EarnPassiveIncomeSection'
 import AskExpertsSection from '../../components/AskExpertsSection'
 import WalletButton from '../../components/WalletButton'
+import JoinCommunity from '../../components/JoinCommunity'
 
 interface Token {
     symbol: string
@@ -165,14 +162,7 @@ const Limit = () => {
         <div>
             <div className="hero-section">
                 <div className="flex-grow flex flex-col items-center px-4 pt-[40px] md:pt-[88px] container mx-auto w-full">
-                    <button
-                        aria-label="Join our community"
-                        className="flex items-center gap-4 text-black font-normal text-[14.29px] leading-[15.84px] bg-white border border-[#eaeaea] rounded-full px-[15px] py-2 mb-5 transition hover:bg-gray-50"
-                    >
-                        <span>⚡</span>
-                        <span>Join our community</span>
-                        <ArrowRight className="w-4 h-4" />
-                    </button>
+                    <JoinCommunity />
                     <h1 className="font-semibold text-[40px] leading-[48px] md:text-[80px] md:leading-[88px] align-middle capitalize mb-3 text-[#3DBEA3] max-w-[720px] text-center mx-auto">
                         <span className="text-[#2A8576]"> Pool </span> Exchange
                         with DEX.
@@ -549,6 +539,10 @@ const Limit = () => {
                                     </div>
                                 </div>
                             </div>
+
+                            <button className="flex-1 mt-[25px] md:[51px] rounded-[12px] bg-[#3DBEA3] w-full p-[16px_72px] text-center text-white text-base font-normal transition-all duration-200 cursor-pointer">
+                                Exchange
+                            </button>
                         </div>
                     </div>
                 </div>

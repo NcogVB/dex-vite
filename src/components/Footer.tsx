@@ -5,9 +5,22 @@ const Footer = () => (
                 NCOG
             </h1>
             <div className="flex justify-between md:flex-row flex-col-reverse md:items-end mt-[90px] md:gap-4 gap-8">
-                <p className="font-light text-xs leading-[13.2px] text-[#767676] md:text-start text-center">
-                    ©2024 MOJEK MONEY. ALL RIGHTS RESERVED
-                </p>
+                <div className="flex gap-5 flex-col">
+                    <p className="font-light text-xs leading-[13.2px] text-[#767676] md:text-start text-center">
+                        ©2025 Powered by Ncog.earth
+                    </p>
+                    <p className="font-light text-xs leading-[13.2px] text-[#767676] md:text-start text-center">
+                        Charts powered by{' '}
+                        <a
+                            href="https://www.tradingview.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline"
+                        >
+                            Trading view
+                        </a>
+                    </p>
+                </div>
                 <div className="flex lg:gap-[90px] md:gap-[50px] gap-[25px] font-normal sm:text-[12px] text-[10px] leading-8 text-[#767676]">
                     <div className="flex flex-col md:text-center ">
                         <a href="#">Integrations</a>
@@ -16,16 +29,44 @@ const Footer = () => (
                         <a href="#">All Blogs</a>
                     </div>
                     <div className="flex flex-col md:text-center ">
-                        <a href="#">🎉 Instagram Contest</a>
-                        <a href="#">Contact Us</a>
-                        <a href="#">X</a>
-                        <a href="#">Give Feedback</a>
+                        <a
+                            href="https://www.instagram.com/ncogofficial?igsh=ZnJqMGlkYW00NWFt"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Instagram
+                        </a>
+                        <a href="#" target="_blank" rel="noopener noreferrer">
+                            Contact Us
+                        </a>
+                        <a
+                            href="https://x.com/Ncog_Earth?t=DIlcGfcI8bBbp0BsG3p4TA&s=09"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            X
+                        </a>
+                        <a
+                            href="https://t.me/NCOG_Earth"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Telegram
+                        </a>
                     </div>
                     <div className="flex flex-col md:text-center ">
                         <a href="#">Privacy Policy</a>
                         <a href="#">Terms & Conditions</a>
-                        <a href="#">Instagram</a>
-                        <a href="#">Linkedin</a>
+                        <a
+                            href=" https://www.facebook.com/share/1C7KpZPYnQ/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Facebook
+                        </a>
+                        <a href="#" target="_blank" rel="noopener noreferrer">
+                            Linkedin
+                        </a>
                     </div>
                 </div>
             </div>

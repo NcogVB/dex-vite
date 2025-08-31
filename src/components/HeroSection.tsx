@@ -1,46 +1,10 @@
+import JoinCommunity from './JoinCommunity'
 import WalletButton from './WalletButton'
 
 const HeroSection = () => (
-    <div className="hero-section mt-[80px]">
+    <div className="hero-section">
         <div className="flex-grow flex flex-col items-center md:px-6 px-4 pt-[40px] md:pt-[88px] container mx-auto w-full">
-            <button
-                aria-label="Join our community"
-                className="flex items-center gap-4 text-black font-normal text-[14.29px] leading-[15.84px] bg-white border border-[#eaeaea] rounded-full px-[15px] py-2 mb-5 transition"
-            >
-                <span>⚡</span>
-                <span>Join our community</span>
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="13"
-                    height="13"
-                    fill="none"
-                >
-                    <g clip-path="url(#a)">
-                        <g clip-path="url(#b)">
-                            <g clip-path="url(#c)">
-                                <path
-                                    stroke="#767676"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width=".9"
-                                    d="M1.176 6.31h10.8m0 0-5.1-5.1m5.1 5.1-5.1 5.1"
-                                />
-                            </g>
-                        </g>
-                    </g>
-                    <defs>
-                        <clipPath id="a">
-                            <path fill="#fff" d="M.28.31h12.59v12H.28z" />
-                        </clipPath>
-                        <clipPath id="b">
-                            <path fill="#fff" d="M.28.31h12.59v12H.28z" />
-                        </clipPath>
-                        <clipPath id="c">
-                            <path fill="#fff" d="M.275.31h12.6v12H.275z" />
-                        </clipPath>
-                    </defs>
-                </svg>
-            </button>
+            <JoinCommunity />
             <h1 className="font-semibold text-[40px] leading-[48px] md:text-[80px] md:leading-[88px] align-middle capitalize mb-3 text-[#3DBEA3] max-w-[620px] text-center mx-auto">
                 <span className="text-[#2A8576]"> Token </span> Swap With
                 Efficiency.
@@ -52,12 +16,232 @@ const HeroSection = () => (
             </p>
             <WalletButton />
             <div className="hero-border mt-[105px] mb-[191px] w-full p-[3.5px] md:rounded-[40px] rounded-[20px]">
-                <div className="bg-[linear-gradient(105.87deg,_rgba(0,0,0,0.2)_3.04%,_rgba(0,0,0,0)_96.05%)] relative backdrop-blur-[80px] w-full md:rounded-[40px] rounded-[20px] px-[15px] md:px-[50px] py-[30px] md:py-[60px] flex flex-col md:flex-row justify-between items-center gap-[25px] md:gap-[51px]">
-                    <div className="flex-1 w-full">
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2.5">
+                <div className="flex flex-col gap-[25px] md:gap-[51px] bg-[linear-gradient(105.87deg,_rgba(0,0,0,0.2)_3.04%,_rgba(0,0,0,0)_96.05%)] relative backdrop-blur-[80px] w-full md:rounded-[40px] rounded-[20px] px-[15px] md:px-[50px] py-[30px] md:py-[60px] ">
+                    <div className='w-full flex md:flex justify-between items-center gap-[25px] md:gap-[51px]">'>
+                        <div className="flex-1 w-full">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2.5">
+                                    <label className="text-[#000000] font-bold text-2xl leading-[100%]">
+                                        From
+                                    </label>
+                                    <div className="relative min-w-[133px]">
+                                        <button
+                                            aria-expanded="false"
+                                            aria-haspopup="listbox"
+                                            className="token-button bg-[#FFFFFF66] border rounded-xl border-solid border-[#FFFFFF1A] px-2 py-2 w-full flex items-center cursor-pointer select-none"
+                                            type="button"
+                                        >
+                                            <img
+                                                src="https://storage.googleapis.com/a1aa/image/6d94bf53-1009-4e09-cc33-08da0b192de7.jpg"
+                                                className="token-img rounded-full shadow-[0px_6px_10px_0px_#00000013] size-[26px] min-w-[26px]"
+                                                alt=""
+                                            />
+                                            <span className="token-label text-[13px] font-normal text-black flex-grow ml-1.5 mr-4">
+                                                Ethereum Mainnet
+                                            </span>
+                                            <svg
+                                                className="token-arrow"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="15"
+                                                height="7"
+                                                fill="none"
+                                            >
+                                                <path
+                                                    fill="#000"
+                                                    d="M7 7a1 1 0 0 1-.64-.23l-6-5A1.001 1.001 0 0 1 1.64.23L7 4.71 12.36.39a1 1 0 0 1 1.41.15A1 1 0 0 1 13.63 2l-6 4.83A1 1 0 0 1 7 7Z"
+                                                />
+                                            </svg>
+                                        </button>
+                                        <ul
+                                            className="token-list absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg max-h-48 overflow-auto ring-1 ring-black ring-opacity-5 hidden text-[13px] font-normal text-black"
+                                            role="listbox"
+                                            tabIndex={-1}
+                                        >
+                                            <li
+                                                className="token-item cursor-pointer select-none relative py-2 pl-3 pr-9 flex items-center"
+                                                data-color="#00B67A"
+                                                data-img="./images/stock-2.png"
+                                                data-token="USDT"
+                                                role="option"
+                                                tabIndex={0}
+                                            >
+                                                <img
+                                                    alt=""
+                                                    className="w-6 h-6 mr-2"
+                                                    height="24"
+                                                    src="./images/stock-2.png"
+                                                    width="24"
+                                                />
+                                                USDT
+                                            </li>
+                                            <li
+                                                className="token-item cursor-pointer select-none relative py-2 pl-3 pr-9 flex items-center"
+                                                data-color="#F7931A"
+                                                data-img="https://storage.googleapis.com/a1aa/image/6d94bf53-1009-4e09-cc33-08da0b192de7.jpg"
+                                                data-token="Ethereum Mainnet"
+                                                role="option"
+                                                tabIndex={-1}
+                                            >
+                                                <img
+                                                    alt=""
+                                                    className="w-6 h-6 mr-2"
+                                                    height="24"
+                                                    src="https://storage.googleapis.com/a1aa/image/6d94bf53-1009-4e09-cc33-08da0b192de7.jpg"
+                                                    width="24"
+                                                />
+                                                Ethereum Mainnet
+                                            </li>
+                                            <li
+                                                className="token-item cursor-pointer select-none relative py-2 pl-3 pr-9 flex items-center"
+                                                data-color="#3B3B3B"
+                                                data-img="./images/stock-1.svg "
+                                                data-token="BNB Chain"
+                                                role="option"
+                                                tabIndex={-1}
+                                            >
+                                                <img
+                                                    alt=""
+                                                    className="w-6 h-6 mr-2"
+                                                    height="24"
+                                                    src="./images/stock-1.svg "
+                                                    width="24"
+                                                />
+                                                BNB Chain
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <button>
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="24"
+                                        height="24"
+                                        fill="none"
+                                    >
+                                        <path
+                                            fill="#000"
+                                            fill-rule="evenodd"
+                                            d="M18.628 6.285A2.654 2.654 0 0 1 20 8.607v5.727c0 .965-.525 1.854-1.372 2.322l-5.333 2.95a2.676 2.676 0 0 1-2.59 0l-5.333-2.95A2.654 2.654 0 0 1 4 14.334V8.607c0-.965.525-1.853 1.372-2.322l5.333-2.95a2.676 2.676 0 0 1 2.59 0l5.333 2.95Zm-8.406 5.185c0-.978.796-1.77 1.778-1.77s1.778.793 1.778 1.77c0 .978-.796 1.77-1.778 1.77a1.774 1.774 0 0 1-1.778-1.77ZM12 7.93a3.548 3.548 0 0 0-3.556 3.54A3.548 3.548 0 0 0 12 15.011a3.548 3.548 0 0 0 3.556-3.54A3.548 3.548 0 0 0 12 7.928Z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div className="bg-[#FFFFFF66] border border-solid border-[#FFFFFF1A] rounded-[12px] px-[15px] py-[18px]">
+                                <div className="flex items-center justify-between font-normal text-sm leading-[18.86px] text-black mb-3">
+                                    <span>Send:</span>
+                                    <span className="underline">Max: 0</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <p className="text-black font-bold text-[22px] leading-[31.43px]">
+                                        0.000
+                                    </p>
+                                    <div className="relative min-w-[95px]">
+                                        <button
+                                            aria-expanded="false"
+                                            aria-haspopup="listbox"
+                                            className="token-button w-full flex items-center cursor-pointer select-none"
+                                            type="button"
+                                        >
+                                            <img
+                                                className="token-img rounded-full shadow-[0px_6px_10px_0px_#00000013] size-[23px] min-w-[23px]"
+                                                alt=""
+                                                src="./images/stock-2.png"
+                                            />
+                                            <span className="token-label text-[#000000] text-[16px] font-normal text-left flex-grow ml-3 mr-8">
+                                                USDT
+                                            </span>
+                                            <svg
+                                                className="token-arrow"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="15"
+                                                height="7"
+                                                fill="none"
+                                            >
+                                                <path
+                                                    fill="#000"
+                                                    d="M7 7a1 1 0 0 1-.64-.23l-6-5A1.001 1.001 0 0 1 1.64.23L7 4.71 12.36.39a1 1 0 0 1 1.41.15A1 1 0 0 1 13.63 2l-6 4.83A1 1 0 0 1 7 7Z"
+                                                />
+                                            </svg>
+                                        </button>
+                                        <ul
+                                            className="token-list absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg max-h-48 overflow-auto ring-1 ring-black ring-opacity-5 hidden text-[13px] font-normal text-black"
+                                            role="listbox"
+                                            tabIndex={-1}
+                                        >
+                                            <li
+                                                className="token-item cursor-pointer select-none relative py-2 pl-3 pr-9 flex items-center"
+                                                data-color="#00B67A"
+                                                data-img="./images/stock-2.png"
+                                                data-token="USDT"
+                                                role="option"
+                                                tabIndex={0}
+                                            >
+                                                <img
+                                                    alt="Indian Rupee symbol icon representing USDT token"
+                                                    className="w-6 h-6 mr-2"
+                                                    height="24"
+                                                    src="./images/stock-2.png"
+                                                    width="24"
+                                                />
+                                                USDT
+                                            </li>
+                                            <li
+                                                className="token-item cursor-pointer select-none relative py-2 pl-3 pr-9 flex items-center"
+                                                data-color="#F7931A"
+                                                data-img="https://storage.googleapis.com/a1aa/image/6d94bf53-1009-4e09-cc33-08da0b192de7.jpg"
+                                                data-token="BTC"
+                                                role="option"
+                                                tabIndex={-1}
+                                            >
+                                                <img
+                                                    alt=""
+                                                    className="w-6 h-6 mr-2"
+                                                    height="24"
+                                                    src="https://storage.googleapis.com/a1aa/image/6d94bf53-1009-4e09-cc33-08da0b192de7.jpg"
+                                                    width="24"
+                                                />
+                                                BTC
+                                            </li>
+                                            <li
+                                                className="token-item cursor-pointer select-none relative py-2 pl-3 pr-9 flex items-center"
+                                                data-color="#3B3B3B"
+                                                data-img="./images/stock-1.svg "
+                                                data-token="ETH"
+                                                role="option"
+                                                tabIndex={-1}
+                                            >
+                                                <img
+                                                    alt=""
+                                                    className="w-6 h-6 mr-2"
+                                                    height="24"
+                                                    src="./images/stock-1.svg "
+                                                    width="24"
+                                                />
+                                                ETH
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="28"
+                                height="29"
+                                fill="none"
+                            >
+                                <path
+                                    fill="#000"
+                                    d="M19.876.5H8.138C3.04.5 0 3.538 0 8.634v11.718c0 5.11 3.04 8.148 8.138 8.148h11.724C24.96 28.5 28 25.462 28 20.366V8.634C28.014 3.538 24.974.5 19.876.5Zm-7.284 21c0 .14-.028.266-.084.406a1.095 1.095 0 0 1-.574.574 1.005 1.005 0 0 1-.406.084 1.056 1.056 0 0 1-.743-.308l-4.132-4.13a1.056 1.056 0 0 1 0-1.484 1.057 1.057 0 0 1 1.485 0l2.34 2.338V7.5c0-.574.476-1.05 1.05-1.05.574 0 1.064.476 1.064 1.05v14Zm8.755-9.128a1.04 1.04 0 0 1-.743.308 1.04 1.04 0 0 1-.742-.308l-2.34-2.338V21.5c0 .574-.475 1.05-1.05 1.05-.574 0-1.05-.476-1.05-1.05v-14c0-.14.028-.266.084-.406.112-.252.308-.462.574-.574a.99.99 0 0 1 .798 0c.127.056.238.126.337.224l4.132 4.13c.406.42.406 1.092 0 1.498Z"
+                                />
+                            </svg>
+                        </div>
+                        <div className="flex-1 w-full">
+                            <div className="flex items-center gap-2.5 mb-3">
                                 <label className="text-[#000000] font-bold text-2xl leading-[100%]">
-                                    From
+                                    To
                                 </label>
                                 <div className="relative min-w-[133px]">
                                     <button
@@ -67,125 +251,15 @@ const HeroSection = () => (
                                         type="button"
                                     >
                                         <img
-                                            src="https://storage.googleapis.com/a1aa/image/6d94bf53-1009-4e09-cc33-08da0b192de7.jpg"
                                             className="token-img rounded-full shadow-[0px_6px_10px_0px_#00000013] size-[26px] min-w-[26px]"
                                             alt=""
+                                            src="./images/stock-1.svg"
                                         />
+
                                         <span className="token-label text-[13px] font-normal text-black flex-grow ml-1.5 mr-4">
-                                            Ethereum Mainnet
-                                        </span>
-                                        <svg
-                                            className="token-arrow"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            width="15"
-                                            height="7"
-                                            fill="none"
-                                        >
-                                            <path
-                                                fill="#000"
-                                                d="M7 7a1 1 0 0 1-.64-.23l-6-5A1.001 1.001 0 0 1 1.64.23L7 4.71 12.36.39a1 1 0 0 1 1.41.15A1 1 0 0 1 13.63 2l-6 4.83A1 1 0 0 1 7 7Z"
-                                            />
-                                        </svg>
-                                    </button>
-                                    <ul
-                                        className="token-list absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg max-h-48 overflow-auto ring-1 ring-black ring-opacity-5 hidden text-[13px] font-normal text-black"
-                                        role="listbox"
-                                        tabIndex={-1}
-                                    >
-                                        <li
-                                            className="token-item cursor-pointer select-none relative py-2 pl-3 pr-9 flex items-center"
-                                            data-color="#00B67A"
-                                            data-img="./images/stock-2.png"
-                                            data-token="USDT"
-                                            role="option"
-                                            tabIndex={0}
-                                        >
-                                            <img
-                                                alt=""
-                                                className="w-6 h-6 mr-2"
-                                                height="24"
-                                                src="./images/stock-2.png"
-                                                width="24"
-                                            />
-                                            USDT
-                                        </li>
-                                        <li
-                                            className="token-item cursor-pointer select-none relative py-2 pl-3 pr-9 flex items-center"
-                                            data-color="#F7931A"
-                                            data-img="https://storage.googleapis.com/a1aa/image/6d94bf53-1009-4e09-cc33-08da0b192de7.jpg"
-                                            data-token="Ethereum Mainnet"
-                                            role="option"
-                                            tabIndex={-1}
-                                        >
-                                            <img
-                                                alt=""
-                                                className="w-6 h-6 mr-2"
-                                                height="24"
-                                                src="https://storage.googleapis.com/a1aa/image/6d94bf53-1009-4e09-cc33-08da0b192de7.jpg"
-                                                width="24"
-                                            />
-                                            Ethereum Mainnet
-                                        </li>
-                                        <li
-                                            className="token-item cursor-pointer select-none relative py-2 pl-3 pr-9 flex items-center"
-                                            data-color="#3B3B3B"
-                                            data-img="./images/stock-1.svg "
-                                            data-token="BNB Chain"
-                                            role="option"
-                                            tabIndex={-1}
-                                        >
-                                            <img
-                                                alt=""
-                                                className="w-6 h-6 mr-2"
-                                                height="24"
-                                                src="./images/stock-1.svg "
-                                                width="24"
-                                            />
                                             BNB Chain
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <button>
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="24"
-                                    height="24"
-                                    fill="none"
-                                >
-                                    <path
-                                        fill="#000"
-                                        fill-rule="evenodd"
-                                        d="M18.628 6.285A2.654 2.654 0 0 1 20 8.607v5.727c0 .965-.525 1.854-1.372 2.322l-5.333 2.95a2.676 2.676 0 0 1-2.59 0l-5.333-2.95A2.654 2.654 0 0 1 4 14.334V8.607c0-.965.525-1.853 1.372-2.322l5.333-2.95a2.676 2.676 0 0 1 2.59 0l5.333 2.95Zm-8.406 5.185c0-.978.796-1.77 1.778-1.77s1.778.793 1.778 1.77c0 .978-.796 1.77-1.778 1.77a1.774 1.774 0 0 1-1.778-1.77ZM12 7.93a3.548 3.548 0 0 0-3.556 3.54A3.548 3.548 0 0 0 12 15.011a3.548 3.548 0 0 0 3.556-3.54A3.548 3.548 0 0 0 12 7.928Z"
-                                        clip-rule="evenodd"
-                                    />
-                                </svg>
-                            </button>
-                        </div>
-                        <div className="bg-[#FFFFFF66] border border-solid border-[#FFFFFF1A] rounded-[12px] px-[15px] py-[18px]">
-                            <div className="flex items-center justify-between font-normal text-sm leading-[18.86px] text-black mb-3">
-                                <span>Send:</span>
-                                <span className="underline">Max: 0</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <p className="text-black font-bold text-[22px] leading-[31.43px]">
-                                    0.000
-                                </p>
-                                <div className="relative min-w-[95px]">
-                                    <button
-                                        aria-expanded="false"
-                                        aria-haspopup="listbox"
-                                        className="token-button w-full flex items-center cursor-pointer select-none"
-                                        type="button"
-                                    >
-                                        <img
-                                            className="token-img rounded-full shadow-[0px_6px_10px_0px_#00000013] size-[23px] min-w-[23px]"
-                                            alt=""
-                                            src="./images/stock-2.png"
-                                        />
-                                        <span className="token-label text-[#000000] text-[16px] font-normal text-left flex-grow ml-3 mr-8">
-                                            USDT
                                         </span>
+
                                         <svg
                                             className="token-arrow"
                                             xmlns="http://www.w3.org/2000/svg"
@@ -225,7 +299,7 @@ const HeroSection = () => (
                                             className="token-item cursor-pointer select-none relative py-2 pl-3 pr-9 flex items-center"
                                             data-color="#F7931A"
                                             data-img="https://storage.googleapis.com/a1aa/image/6d94bf53-1009-4e09-cc33-08da0b192de7.jpg"
-                                            data-token="BTC"
+                                            data-token="Ethereum Mainnet"
                                             role="option"
                                             tabIndex={-1}
                                         >
@@ -236,7 +310,7 @@ const HeroSection = () => (
                                                 src="https://storage.googleapis.com/a1aa/image/6d94bf53-1009-4e09-cc33-08da0b192de7.jpg"
                                                 width="24"
                                             />
-                                            BTC
+                                            Ethereum Mainnet
                                         </li>
                                         <li
                                             className="token-item cursor-pointer select-none relative py-2 pl-3 pr-9 flex items-center"
@@ -253,131 +327,28 @@ const HeroSection = () => (
                                                 src="./images/stock-1.svg "
                                                 width="24"
                                             />
-                                            ETH
+                                            BNB Chain
                                         </li>
                                     </ul>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    <div>
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="28"
-                            height="29"
-                            fill="none"
-                        >
-                            <path
-                                fill="#000"
-                                d="M19.876.5H8.138C3.04.5 0 3.538 0 8.634v11.718c0 5.11 3.04 8.148 8.138 8.148h11.724C24.96 28.5 28 25.462 28 20.366V8.634C28.014 3.538 24.974.5 19.876.5Zm-7.284 21c0 .14-.028.266-.084.406a1.095 1.095 0 0 1-.574.574 1.005 1.005 0 0 1-.406.084 1.056 1.056 0 0 1-.743-.308l-4.132-4.13a1.056 1.056 0 0 1 0-1.484 1.057 1.057 0 0 1 1.485 0l2.34 2.338V7.5c0-.574.476-1.05 1.05-1.05.574 0 1.064.476 1.064 1.05v14Zm8.755-9.128a1.04 1.04 0 0 1-.743.308 1.04 1.04 0 0 1-.742-.308l-2.34-2.338V21.5c0 .574-.475 1.05-1.05 1.05-.574 0-1.05-.476-1.05-1.05v-14c0-.14.028-.266.084-.406.112-.252.308-.462.574-.574a.99.99 0 0 1 .798 0c.127.056.238.126.337.224l4.132 4.13c.406.42.406 1.092 0 1.498Z"
-                            />
-                        </svg>
-                    </div>
-                    <div className="flex-1 w-full">
-                        <div className="flex items-center gap-2.5 mb-3">
-                            <label className="text-[#000000] font-bold text-2xl leading-[100%]">
-                                To
-                            </label>
-                            <div className="relative min-w-[133px]">
-                                <button
-                                    aria-expanded="false"
-                                    aria-haspopup="listbox"
-                                    className="token-button bg-[#FFFFFF66] border rounded-xl border-solid border-[#FFFFFF1A] px-2 py-2 w-full flex items-center cursor-pointer select-none"
-                                    type="button"
-                                >
-                                    <img
-                                        className="token-img rounded-full shadow-[0px_6px_10px_0px_#00000013] size-[26px] min-w-[26px]"
-                                        alt=""
-                                        src="./images/stock-1.svg"
-                                    />
 
-                                    <span className="token-label text-[13px] font-normal text-black flex-grow ml-1.5 mr-4">
-                                        BNB Chain
-                                    </span>
-
-                                    <svg
-                                        className="token-arrow"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="15"
-                                        height="7"
-                                        fill="none"
-                                    >
-                                        <path
-                                            fill="#000"
-                                            d="M7 7a1 1 0 0 1-.64-.23l-6-5A1.001 1.001 0 0 1 1.64.23L7 4.71 12.36.39a1 1 0 0 1 1.41.15A1 1 0 0 1 13.63 2l-6 4.83A1 1 0 0 1 7 7Z"
-                                        />
-                                    </svg>
-                                </button>
-                                <ul
-                                    className="token-list absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg max-h-48 overflow-auto ring-1 ring-black ring-opacity-5 hidden text-[13px] font-normal text-black"
-                                    role="listbox"
-                                    tabIndex={-1}
-                                >
-                                    <li
-                                        className="token-item cursor-pointer select-none relative py-2 pl-3 pr-9 flex items-center"
-                                        data-color="#00B67A"
-                                        data-img="./images/stock-2.png"
-                                        data-token="USDT"
-                                        role="option"
-                                        tabIndex={0}
-                                    >
-                                        <img
-                                            alt="Indian Rupee symbol icon representing USDT token"
-                                            className="w-6 h-6 mr-2"
-                                            height="24"
-                                            src="./images/stock-2.png"
-                                            width="24"
-                                        />
-                                        USDT
-                                    </li>
-                                    <li
-                                        className="token-item cursor-pointer select-none relative py-2 pl-3 pr-9 flex items-center"
-                                        data-color="#F7931A"
-                                        data-img="https://storage.googleapis.com/a1aa/image/6d94bf53-1009-4e09-cc33-08da0b192de7.jpg"
-                                        data-token="Ethereum Mainnet"
-                                        role="option"
-                                        tabIndex={-1}
-                                    >
-                                        <img
-                                            alt=""
-                                            className="w-6 h-6 mr-2"
-                                            height="24"
-                                            src="https://storage.googleapis.com/a1aa/image/6d94bf53-1009-4e09-cc33-08da0b192de7.jpg"
-                                            width="24"
-                                        />
-                                        Ethereum Mainnet
-                                    </li>
-                                    <li
-                                        className="token-item cursor-pointer select-none relative py-2 pl-3 pr-9 flex items-center"
-                                        data-color="#3B3B3B"
-                                        data-img="./images/stock-1.svg "
-                                        data-token="ETH"
-                                        role="option"
-                                        tabIndex={-1}
-                                    >
-                                        <img
-                                            alt=""
-                                            className="w-6 h-6 mr-2"
-                                            height="24"
-                                            src="./images/stock-1.svg "
-                                            width="24"
-                                        />
-                                        BNB Chain
-                                    </li>
-                                </ul>
+                            <div className="bg-[#FFFFFF66] border border-solid border-[#FFFFFF1A] rounded-[12px] px-[15px] py-[18px]">
+                                <div className="flex items-center justify-between font-normal text-sm leading-[18.86px] text-black mb-3">
+                                    <span>Receive (estimated):</span>
+                                </div>
+                                <p className="text-black font-bold text-[22px] leading-[31.43px]">
+                                    10,000
+                                </p>
                             </div>
                         </div>
-
-                        <div className="bg-[#FFFFFF66] border border-solid border-[#FFFFFF1A] rounded-[12px] px-[15px] py-[18px]">
-                            <div className="flex items-center justify-between font-normal text-sm leading-[18.86px] text-black mb-3">
-                                <span>Receive (estimated):</span>
-                            </div>
-                            <p className="text-black font-bold text-[22px] leading-[31.43px]">
-                                10,000
-                            </p>
-                        </div>
                     </div>
-                    <div className="absolute flex items-end gap-2 space-y-4 xl:left-[-73px] left-0 md:top-[-90px] top-[-100px] w-full justify-between">
+
+                    <button className="block bg-[#3DBEA3] w-full p-[16px_72px] text-center text-white text-base font-normal rounded-[33px] transition-all duration-200 cursor-pointer">
+                        Exchange
+                    </button>
+
+                    {/* <div className="absolute flex items-end gap-2 space-y-4 xl:left-[-73px] left-0 md:top-[-90px] top-[-100px] w-full justify-between">
                         <div className="bg-[#FFFFFF80] rounded-[15px] shadow-md p-3 max-w-[280px] text-[11px] text-black flex flex-col space-y-1">
                             <div className="flex items-center justify-between text-[12px] font-semibold">
                                 <div className="flex items-center gap-1">
@@ -564,7 +535,7 @@ const HeroSection = () => (
                                 that the user have widthdrawn
                             </p>
                         </div>
-                    </div>
+                    </div> */}
                 </div>
             </div>
         </div>

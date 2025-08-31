@@ -146,7 +146,7 @@ const Header: React.FC = () => {
                     >
                         <img
                             alt="logo"
-                            className="w-full max-w-[170px] hover:scale-105 transition-transform duration-200"
+                            className="w-[120px] max-w-[170px] hover:scale-105 transition-transform duration-200"
                             src="/images/logo.png"
                         />
                     </Link>
@@ -277,7 +277,7 @@ const Header: React.FC = () => {
             <div className="lg:hidden flex items-center justify-between gap-3 mt-2">
                 <img
                     alt="logo"
-                    className="w-full max-w-[170px]"
+                    className="w-full max-w-[120px]"
                     src="/images/logo.png"
                 />
                 <button
