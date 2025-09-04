@@ -1,52 +1,41 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
+import { useLiquidity } from '../contexts/LiquidityContext'
+import { ethers } from 'ethers'
+import { Token } from '@uniswap/sdk-core'
+import { Pool, Position } from '@uniswap/v3-sdk'
+import { UNISWAP_V3_POOL_ABI } from '../contexts/ABI'
 
-interface TokenData {
-    usdt: number
-    eth: number
+interface LiquidityData {
+    poolTokens: number; // Liquidity tokens (scaled)
+    usdtAmount: number; // Amount of USDT in position
+    ethAmount: number; // Amount of ETH in position
+    shareOfPool: number; // Percentage of pool owned
+    reward: number | null; // Uncollected fees (if any)
 }
-
-interface PoolData {
-    usdtRate: number
-    ethRate: number
-    shareOfPool: number
-    poolUsdt: number
-    poolEth: number
-    lpTokens: number
-}
+const POSITION_MANAGER_ADDRESS = '0x442d8CCae9d8dd3bc4B21494C0eD1ccF4d24F505';
+const POSITION_MANAGER_MINIMAL_ABI = [
+    'function positions(uint256 tokenId) view returns (uint96 nonce, address operator, address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint128 liquidity, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, uint128 tokensOwed0, uint128 tokensOwed1)',
+    'function decreaseLiquidity(tuple(uint256 tokenId, uint128 liquidity, uint256 amount0Min, uint256 amount1Min, uint256 deadline)) returns (uint256 amount0, uint256 amount1)',
+    'function collect(tuple(uint256 tokenId, address recipient, uint128 amount0Max, uint128 amount1Max)) returns (uint256 amount0, uint256 amount1)',
+];
 
 const Converter1: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'exchange' | 'pool'>('pool')
+    const { removeLiquidity } = useLiquidity()
     const [percentage, setPercentage] = useState<number>(25)
+    const [tokenId, setTokenId] = useState<string>(''); // User inputs or fetches tokenId
     const [selectedPercentage, setSelectedPercentage] = useState<
         25 | 50 | 75 | 100
     >(25)
+    const [isRemovingLiquidity, setIsRemovingLiquidity] = useState(false);
+    const [liquidityData, setLiquidityData] = useState<LiquidityData>({
+        poolTokens: 0,
+        usdtAmount: 0,
+        ethAmount: 0,
+        shareOfPool: 0,
+        reward: null,
+    });
     const [isEnabled, setIsEnabled] = useState<boolean>(false)
-
-    // Mock pool data - in real app this would come from API/blockchain
-    const [poolData] = useState<PoolData>({
-        usdtRate: 0.0000919189,
-        ethRate: 10879.2,
-        shareOfPool: 1.05335,
-        poolUsdt: 1.05335,
-        poolEth: 0.0000968228,
-        lpTokens: 0.00000001009,
-    })
-
-    // Calculate amounts based on percentage
-    const [calculatedAmounts, setCalculatedAmounts] = useState<TokenData>({
-        usdt: 0,
-        eth: 0,
-    })
-
-    useEffect(() => {
-        const usdtAmount = (poolData.poolUsdt * percentage) / 100
-        const ethAmount = (poolData.poolEth * percentage) / 100
-
-        setCalculatedAmounts({
-            usdt: Number(usdtAmount.toFixed(6)),
-            eth: Number(ethAmount.toFixed(10)),
-        })
-    }, [percentage, poolData])
 
     const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = Number(e.target.value)
@@ -59,6 +48,86 @@ const Converter1: React.FC = () => {
         else setSelectedPercentage(100)
     }
 
+    const fetchPositionData = useCallback(async () => {
+        if (!tokenId || !(window as any).ethereum) return;
+
+        try {
+            const provider = new ethers.BrowserProvider((window as any).ethereum);
+
+            const positionManager = new ethers.Contract(
+                POSITION_MANAGER_ADDRESS,
+                POSITION_MANAGER_MINIMAL_ABI,
+                provider
+            );
+
+            const poolAddress = '0x8269d25b908d96169b8e10D0fb12169eF42334e3'; // From addLiquidity call
+            const poolContract = new ethers.Contract(poolAddress, UNISWAP_V3_POOL_ABI, provider);
+
+            // Fetch position and pool data
+            const [positionData, poolData] = await Promise.all([
+                positionManager.positions(tokenId),
+                Promise.all([
+                    poolContract.liquidity(),
+                    poolContract.slot0(),
+                    poolContract.fee(),
+                    poolContract.token0(),
+                    poolContract.token1(),
+                ]),
+            ]);
+
+            const [liquidity, tokensOwed0, tokensOwed1] =
+                positionData.slice(7); // Extract relevant fields
+            const [poolLiquidity, slot0, fee, token0Address, token1Address] = poolData;
+
+            // Create Token objects (assuming chainId 11155111 from context)
+            const chainId = 11155111;
+            const token0 = new Token(chainId, token0Address, 18, 'USDT', 'USDT');
+            const token1 = new Token(chainId, token1Address, 18, 'ETH', 'ETH');
+
+            // Create Pool object
+            const pool = new Pool(
+                token0,
+                token1,
+                Number(fee),
+                slot0[0].toString(),
+                poolLiquidity.toString(),
+                Number(slot0[1])
+            );
+
+            // Create Position object
+            const position = new Position({
+                pool,
+                liquidity: liquidity.toString(),
+                tickLower: Number(positionData[5]),
+                tickUpper: Number(positionData[6]),
+            });
+
+            // Calculate amounts
+            const amount0 = Number(position.amount0.toSignificant(6, { groupSeparator: '' }));
+            const amount1 = Number(position.amount1.toSignificant(6, { groupSeparator: '' }));
+            const usdtAmount = token0.symbol === 'usdc' ? amount0 : amount1;
+            const ethAmount = token1.symbol === 'usdt' ? amount1 : amount0;
+            const shareOfPool = (Number(liquidity) / Number(poolLiquidity)) * 100;
+
+            // Estimate rewards (uncollected fees)
+            const reward = Number(tokensOwed0) / 1e18 + Number(tokensOwed1) / 1e18; // Simplified, adjust based on feeGrowth
+
+            setLiquidityData({
+                poolTokens: Number(liquidity) / 1e18, // Scale for display
+                usdtAmount,
+                ethAmount,
+                shareOfPool,
+                reward: reward > 0 ? reward : null,
+            });
+        } catch (error) {
+            console.error('Error fetching position data:', error);
+        }
+    }, [tokenId]);
+
+    // Fetch data when tokenId changes
+    useEffect(() => {
+        if (tokenId) fetchPositionData();
+    }, [tokenId, fetchPositionData]);
     const handlePercentageSelect = (percent: 25 | 50 | 75 | 100) => {
         setSelectedPercentage(percent)
         setPercentage(percent)
@@ -69,20 +138,28 @@ const Converter1: React.FC = () => {
         // In real app, this would trigger wallet connection/approval
     }
 
-    const handleRemove = () => {
-        if (!isEnabled) return
+    const handleRemove = async () => {
+        if (!tokenId) {
+            alert('Please enter a valid token ID');
+            return;
+        }
+        if (percentage <= 0 || percentage > 100) {
+            alert('Please enter a percentage between 1 and 100');
+            return;
+        }
 
-        // In real app, this would trigger the actual liquidity removal transaction
-        console.log('Removing liquidity:', {
-            percentage,
-            amounts: calculatedAmounts,
-            lpTokensToRemove: (poolData.lpTokens * percentage) / 100,
-        })
-
-        // Reset after successful removal
-        setPercentage(25)
-        setSelectedPercentage(25)
-    }
+        setIsRemovingLiquidity(true);
+        try {
+            await removeLiquidity(Number(tokenId), percentage);
+            alert('Liquidity removed successfully!');
+            // Refresh position data
+        } catch (error) {
+            console.error('Error removing liquidity:', error);
+            alert('Failed to remove liquidity');
+        } finally {
+            setIsRemovingLiquidity(false);
+        }
+    };
 
     return (
         <div className="flex items-center justify-center min-h-screen">
@@ -99,31 +176,29 @@ const Converter1: React.FC = () => {
                         <div className="relative z-10 border bg-[#FFFFFF66] inline-flex px-2 py-1.5 rounded-[14px] border-solid border-[#FFFFFF1A] gap-2 mb-[24px]">
                             <button
                                 onClick={() => setActiveTab('exchange')}
-                                className={`rounded-[8px] font-normal text-sm leading-[100%] px-[22px] py-[13px] transition-colors ${
-                                    activeTab === 'exchange'
-                                        ? 'bg-white text-[#2A8576] font-bold'
-                                        : 'text-black'
-                                }`}
+                                className={`rounded-[8px] font-normal text-sm leading-[100%] px-[22px] py-[13px] transition-colors ${activeTab === 'exchange'
+                                    ? 'bg-white text-[#2A8576] font-bold'
+                                    : 'text-black'
+                                    }`}
                             >
                                 Exchange
                             </button>
                             <button
                                 onClick={() => setActiveTab('pool')}
-                                className={`rounded-[8px] font-normal text-sm leading-[100%] px-[22px] py-[13px] transition-colors ${
-                                    activeTab === 'pool'
-                                        ? 'bg-white text-[#2A8576] font-bold'
-                                        : 'text-black'
-                                }`}
+                                className={`rounded-[8px] font-normal text-sm leading-[100%] px-[22px] py-[13px] transition-colors ${activeTab === 'pool'
+                                    ? 'bg-white text-[#2A8576] font-bold'
+                                    : 'text-black'
+                                    }`}
                             >
                                 Pool
                             </button>
                         </div>
 
                         <h2 className="mb-4 font-bold text-xl sm:text-3xl leading-[100%] text-black">
-                            Remove USDT/ETH Liquidity
+                            Remove USDT/USDC Liquidity
                         </h2>
                         <p className="text-black font-normal text-xl leading-[18.86px] mb-10">
-                            To Receive USDT and ETH
+                            To Receive USDT and USDC
                         </p>
 
                         <div className="flex flex-col lg:flex-row items-start gap-[25px] lg:gap-[51px]">
@@ -161,21 +236,20 @@ const Converter1: React.FC = () => {
                                                     onChange={() =>
                                                         handlePercentageSelect(
                                                             percent as
-                                                                | 25
-                                                                | 50
-                                                                | 75
-                                                                | 100
+                                                            | 25
+                                                            | 50
+                                                            | 75
+                                                            | 100
                                                         )
                                                     }
                                                 />
                                                 <label
                                                     htmlFor={`${percent}_percentage`}
-                                                    className={`cursor-pointer w-full block bg-[#FFFFFF66] border border-solid border-[#FFFFFF1A] rounded-[8px] py-[5px] lg:py-[11px] text-[16px] lg:text-base font-semibold text-center transition-colors ${
-                                                        selectedPercentage ===
+                                                    className={`cursor-pointer w-full block bg-[#FFFFFF66] border border-solid border-[#FFFFFF1A] rounded-[8px] py-[5px] lg:py-[11px] text-[16px] lg:text-base font-semibold text-center transition-colors ${selectedPercentage ===
                                                         percent
-                                                            ? 'border-white text-[#2a8576] bg-white'
-                                                            : 'text-[#80888A] lg:text-[#1D3B5E]'
-                                                    }`}
+                                                        ? 'border-white text-[#2a8576] bg-white'
+                                                        : 'text-[#80888A] lg:text-[#1D3B5E]'
+                                                        }`}
                                                 >
                                                     {percent}%
                                                 </label>
@@ -215,19 +289,21 @@ const Converter1: React.FC = () => {
                                                 </span>
                                             </div>
                                             <span>
-                                                {calculatedAmounts.usdt}
+                                                {((liquidityData.usdtAmount * percentage) / 100).toFixed(6)}
                                             </span>
                                         </div>
                                         <div className="flex justify-between">
                                             <div className="flex items-center space-x-2">
                                                 <div className="size-[30px] bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
-                                                    ETH
+                                                    USDC
                                                 </div>
                                                 <span className="font-normal text-lg leading-[100%]">
-                                                    ETH
+                                                    USDC
                                                 </span>
                                             </div>
-                                            <span>{calculatedAmounts.eth}</span>
+                                            <span>
+                                                {((liquidityData.ethAmount * percentage) / 100).toFixed(6)}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -246,15 +322,15 @@ const Converter1: React.FC = () => {
                                                 1 USDT =
                                             </span>
                                             <span className="font-bold md:text-[22px] text-base leading-[100%]">
-                                                {poolData.usdtRate} ETH
+                                                {liquidityData.ethAmount.toFixed(5)} ETH
                                             </span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="font-normal text-lg leading-[100%]">
-                                                1 ETH =
+                                                1 USDC =
                                             </span>
                                             <span className="font-bold md:text-[22px] text-base leading-[100%]">
-                                                {poolData.ethRate} USDT
+                                                {liquidityData.usdtAmount.toFixed(5)}USDT
                                             </span>
                                         </div>
                                     </div>
@@ -282,36 +358,43 @@ const Converter1: React.FC = () => {
                                                     U
                                                 </div>
                                                 <div className="size-[24px] bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
-                                                    E
+                                                    $
                                                 </div>
                                                 <span className="font-bold md:text-lg text-base leading-[100%]">
-                                                    USDT - ETH
+                                                    USDT - USDC
                                                 </span>
                                             </div>
                                             <span className="font-bold md:text-[22px] text-base leading-[100%]">
-                                                {poolData.lpTokens}
+                                                {liquidityData.poolTokens.toFixed(11)}
                                             </span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="font-normal text-lg leading-[100%]">
                                                 Share of Pool:
                                             </span>
-                                            <span>{poolData.shareOfPool}%</span>
+                                            <span>{liquidityData.shareOfPool.toFixed(2)}%</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="font-normal text-lg leading-[100%]">
                                                 Pool USDT:
                                             </span>
-                                            <span>{poolData.poolUsdt}</span>
+                                            <span>{liquidityData.usdtAmount.toFixed(5)}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="font-normal text-lg leading-[100%]">
-                                                Pool ETH:
+                                                Pool USDC:
                                             </span>
-                                            <span>{poolData.poolEth}</span>
+                                            <span>{liquidityData.ethAmount.toFixed(5)}</span>
                                         </div>
                                     </div>
                                 </div>
+                                <input
+                                    type="text"
+                                    placeholder="Enter Position Token ID"
+                                    value={tokenId}
+                                    onChange={(e) => setTokenId(e.target.value)}
+                                    className="w-full mb-4 p-2 rounded-[8px] border border-[#FFFFFF1A] bg-transparent text-black"
+                                />
                             </div>
                         </div>
 
@@ -319,24 +402,22 @@ const Converter1: React.FC = () => {
                             <button
                                 onClick={handleEnable}
                                 disabled={isEnabled}
-                                className={`rounded-[150px] p-[16px_92px] font-semibold text-base leading-[17.6px] border-2 transition-colors ${
-                                    isEnabled
-                                        ? 'text-gray-500 bg-gray-300 border-gray-300 cursor-not-allowed'
-                                        : 'text-white bg-[#3DBEA3] border-[#3DBEA3] hover:bg-[#35a691]'
-                                }`}
+                                className={`rounded-[150px] p-[16px_92px] font-semibold text-base leading-[17.6px] border-2 transition-colors ${isEnabled
+                                    ? 'text-gray-500 bg-gray-300 border-gray-300 cursor-not-allowed'
+                                    : 'text-white bg-[#3DBEA3] border-[#3DBEA3] hover:bg-[#35a691]'
+                                    }`}
                             >
                                 {isEnabled ? 'Enabled' : 'Enable'}
                             </button>
                             <button
                                 onClick={handleRemove}
                                 disabled={!isEnabled}
-                                className={`rounded-[150px] p-[16px_92px] font-semibold text-base leading-[17.6px] border-2 transition-colors ${
-                                    !isEnabled
-                                        ? 'text-gray-400 border-gray-300 cursor-not-allowed'
-                                        : 'text-[#3DBEA3] border-[#3DBEA3] hover:bg-[#3DBEA3] hover:text-white'
-                                }`}
+                                className={`rounded-[150px] p-[16px_92px] font-semibold text-base leading-[17.6px] border-2 transition-colors ${!isEnabled
+                                    ? 'text-gray-400 border-gray-300 cursor-not-allowed'
+                                    : 'text-[#3DBEA3] border-[#3DBEA3] hover:bg-[#3DBEA3] hover:text-white'
+                                    }`}
                             >
-                                Remove
+                                {isRemovingLiquidity ? "Removing.." : "Remove"}
                             </button>
                         </div>
                     </div>
