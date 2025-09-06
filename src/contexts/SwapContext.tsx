@@ -57,7 +57,12 @@ interface PoolInfo {
 
 interface SwapContextValue {
     account: string | null;
+    provider: ethers.BrowserProvider | null;
+    signer: ethers.Signer | null;
+    isConnected: boolean;
+    isConnecting: boolean;
     connect: () => Promise<void>;
+    disconnect: () => void;
     getQuote: (params: {
         fromSymbol: string;
         toSymbol: string;
@@ -89,17 +94,184 @@ export const SwapProvider: React.FC<{ children: React.ReactNode }> = ({
     const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
     const [signer, setSigner] = useState<ethers.Signer | null>(null);
     const [account, setAccount] = useState<string | null>(null);
+    const [isConnecting, setIsConnecting] = useState(false);
+    const [isConnected, setIsConnected] = useState(false);
 
-    const connect = async () => {
-        if (!(window as any).ethereum) throw new Error("MetaMask not found");
-        const prov = new ethers.BrowserProvider((window as any).ethereum);
-        await prov.send("eth_requestAccounts", []);
-        const sig = await prov.getSigner();
-        const addr = await sig.getAddress();
-        setProvider(prov);
-        setSigner(sig);
-        setAccount(addr);
+    // Check if MetaMask is available
+    const isMetaMaskAvailable = () => {
+        return typeof window !== 'undefined' &&
+            typeof (window as any).ethereum !== 'undefined' &&
+            (window as any).ethereum.isMetaMask;
     };
+
+    // Initialize connection
+    const initializeConnection = async (providerInstance: ethers.BrowserProvider) => {
+        try {
+            const signerInstance = await providerInstance.getSigner();
+            const address = await signerInstance.getAddress();
+
+            setProvider(providerInstance);
+            setSigner(signerInstance);
+            setAccount(address);
+            setIsConnected(true);
+
+            console.log("Wallet connected successfully:", {
+                address,
+                provider: !!providerInstance,
+                signer: !!signerInstance
+            });
+
+            return { provider: providerInstance, signer: signerInstance, address };
+        } catch (error) {
+            console.error("Failed to initialize connection:", error);
+            throw error;
+        }
+    };
+
+    // Connect wallet function
+    const connect = async () => {
+        if (!isMetaMaskAvailable()) {
+            throw new Error("MetaMask is not installed. Please install MetaMask to continue.");
+        }
+
+        if (isConnecting) {
+            console.log("Connection already in progress...");
+            return;
+        }
+
+        setIsConnecting(true);
+
+        try {
+            const ethereum = (window as any).ethereum;
+
+            // Request account access
+            const accounts = await ethereum.request({
+                method: 'eth_requestAccounts'
+            });
+
+            if (!accounts || accounts.length === 0) {
+                throw new Error("No accounts returned from MetaMask");
+            }
+
+            // Create provider
+            const providerInstance = new ethers.BrowserProvider(ethereum);
+
+            // Verify network connection
+            const network = await providerInstance.getNetwork();
+            console.log("Connected to network:", network);
+
+            // Initialize connection
+            await initializeConnection(providerInstance);
+
+        } catch (error: any) {
+            console.error("Connection failed:", error);
+
+            // Reset states on error
+            setProvider(null);
+            setSigner(null);
+            setAccount(null);
+            setIsConnected(false);
+
+            // Handle specific errors
+            if (error.code === 4001) {
+                throw new Error("Please connect to MetaMask to continue.");
+            } else if (error.code === -32002) {
+                throw new Error("MetaMask connection request is already pending. Please check MetaMask.");
+            } else {
+                throw new Error(error.message || "Failed to connect wallet");
+            }
+        } finally {
+            setIsConnecting(false);
+        }
+    };
+
+    // Disconnect wallet
+    const disconnect = () => {
+        setProvider(null);
+        setSigner(null);
+        setAccount(null);
+        setIsConnected(false);
+        console.log("Wallet disconnected");
+    };
+
+    // Handle account changes
+    const handleAccountsChanged = async (accounts: string[]) => {
+        console.log("Accounts changed:", accounts);
+
+        if (accounts.length === 0) {
+            // User disconnected
+            disconnect();
+        } else if (accounts[0] !== account) {
+            // Account switched
+            try {
+                if (provider) {
+                    await initializeConnection(provider);
+                }
+            } catch (error) {
+                console.error("Failed to handle account change:", error);
+                disconnect();
+            }
+        }
+    };
+
+    // Handle chain changes
+    const handleChainChanged = (chainId: string) => {
+        console.log("Chain changed to:", chainId);
+        // Reload the page or reinitialize connection as needed
+        window.location.reload();
+    };
+
+    // Handle disconnect
+    const handleDisconnect = () => {
+        console.log("MetaMask disconnected");
+        disconnect();
+    };
+
+    // Auto-connect on page load
+    useEffect(() => {
+        const autoConnect = async () => {
+            if (!isMetaMaskAvailable()) {
+                console.log("MetaMask not available");
+                return;
+            }
+
+            try {
+                const ethereum = (window as any).ethereum;
+                const accounts = await ethereum.request({ method: 'eth_accounts' });
+
+                if (accounts && accounts.length > 0) {
+                    console.log("Auto-connecting to existing session...");
+                    const providerInstance = new ethers.BrowserProvider(ethereum);
+                    await initializeConnection(providerInstance);
+                }
+            } catch (error) {
+                console.error("Auto-connect failed:", error);
+            }
+        };
+
+        autoConnect();
+    }, []);
+
+    // Setup event listeners
+    useEffect(() => {
+        if (!isMetaMaskAvailable()) return;
+
+        const ethereum = (window as any).ethereum;
+
+        // Add event listeners
+        ethereum.on('accountsChanged', handleAccountsChanged);
+        ethereum.on('chainChanged', handleChainChanged);
+        ethereum.on('disconnect', handleDisconnect);
+
+        // Cleanup event listeners
+        return () => {
+            if (ethereum.removeListener) {
+                ethereum.removeListener('accountsChanged', handleAccountsChanged);
+                ethereum.removeListener('chainChanged', handleChainChanged);
+                ethereum.removeListener('disconnect', handleDisconnect);
+            }
+        };
+    }, [account, provider]);
 
     const getPoolInfo = async (
         tokenA: string,
@@ -155,10 +327,10 @@ export const SwapProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     const getTokenBalance = async (tokenSymbol: string): Promise<string> => {
-        if (!provider || !account) throw new Error("Not connected");
+        if (!provider || !account) throw new Error("Wallet not connected");
 
         const tokenInfo = TOKENS[tokenSymbol];
-        if (!tokenInfo) throw new Error("Token not configured");
+        if (!tokenInfo) throw new Error(`Token ${tokenSymbol} not configured`);
 
         try {
             const tokenContract = new ethers.Contract(
@@ -184,7 +356,7 @@ export const SwapProvider: React.FC<{ children: React.ReactNode }> = ({
         toSymbol: string;
         amountIn: string;
     }): Promise<SwapQuote> => {
-        if (!provider) throw new Error("Not connected");
+        if (!provider) throw new Error("Provider not connected");
 
         const tokenInInfo = TOKENS[fromSymbol];
         const tokenOutInfo = TOKENS[toSymbol];
@@ -228,7 +400,7 @@ export const SwapProvider: React.FC<{ children: React.ReactNode }> = ({
         amountIn: string;
         slippage: number;
     }) => {
-        if (!signer || !account) throw new Error("Not connected");
+        if (!signer || !account) throw new Error("Wallet not connected");
 
         const tokenInInfo = TOKENS[fromSymbol];
         const tokenOutInfo = TOKENS[toSymbol];
@@ -250,13 +422,18 @@ export const SwapProvider: React.FC<{ children: React.ReactNode }> = ({
             account,
             SWAP_ROUTER_ADDRESS
         );
+
         if (currentAllowance < amtInWei) {
+            console.log("Approving token spend...");
             const approveTx = await tokenInContract.approve(
                 SWAP_ROUTER_ADDRESS,
                 amtInWei
             );
             const receipt = await approveTx.wait();
-            if (!receipt || receipt.status !== 1) throw new Error("Token approval failed");
+            if (!receipt || receipt.status !== 1) {
+                throw new Error("Token approval failed");
+            }
+            console.log("Token approval successful");
         }
 
         const quote = await getQuote({ fromSymbol, toSymbol, amountIn });
@@ -265,51 +442,37 @@ export const SwapProvider: React.FC<{ children: React.ReactNode }> = ({
             tokenOutInfo.decimals
         );
 
-        const minOutWei =
-            (amountOutWei * BigInt(100 - slippage)) / BigInt(100);
-
+        const minOutWei = (amountOutWei * BigInt(100 - slippage)) / BigInt(100);
         const deadline = Math.floor(Date.now() / 1000) + 60 * 10;
 
         const params = {
             tokenIn: tokenInInfo.address,
             tokenOut: tokenOutInfo.address,
             fee: quote.fee,
-            recipient: account!,
+            recipient: account,
             deadline,
             amountIn: amtInWei,
             amountOutMinimum: minOutWei,
             sqrtPriceLimitX96: 0n,
         };
 
+        console.log("Executing swap...");
         const tx = await router.exactInputSingle(params, { gasLimit: 300000 });
         const receipt = await tx.wait();
+        console.log("Swap successful:", receipt);
         return receipt;
     };
-
-    useEffect(() => {
-        if ((window as any).ethereum) {
-            (async () => {
-                try {
-                    const prov = new ethers.BrowserProvider((window as any).ethereum);
-                    const accounts = await prov.send("eth_accounts", []);
-                    if (accounts.length) {
-                        const sig = await prov.getSigner();
-                        setProvider(prov);
-                        setSigner(sig);
-                        setAccount(accounts[0]);
-                    }
-                } catch (error) {
-                    console.log("Auto-connect failed:", error);
-                }
-            })();
-        }
-    }, []);
 
     return (
         <SwapContext.Provider
             value={{
                 account,
+                provider,
+                signer,
+                isConnected,
+                isConnecting,
                 connect,
+                disconnect,
                 getQuote,
                 swapExactInputSingle,
                 getTokenBalance,

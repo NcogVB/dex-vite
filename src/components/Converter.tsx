@@ -21,7 +21,10 @@ const Converter = () => {
         swapExactInputSingle,
         getTokenBalance,
     } = useSwap()
+    console.log("Connection Status:", {
+        account,
 
+    });
     const [tokens, setTokens] = useState<Token[]>([
         { symbol: 'USDT', name: 'Tether', img: '/images/stock-3.png', color: '#00B67A', balance: 0, realBalance: '0' },
         { symbol: 'USDC', name: 'USD Coin', img: '/images/stock-5.png', color: '#2775CA', balance: 0, realBalance: '0' },

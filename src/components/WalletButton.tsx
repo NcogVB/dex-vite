@@ -1,7 +1,7 @@
 // components/WalletButton.tsx
 import React, { useState } from 'react'
 import { Wallet, ChevronDown, Copy, ExternalLink, LogOut } from 'lucide-react'
-import { useWallet } from '../hooks/useWallet'
+import { useSwap } from '../contexts/SwapContext'
 
 interface WalletButtonProps {
     className?: string
@@ -12,9 +12,10 @@ const WalletButton: React.FC<WalletButtonProps> = ({
     className = '',
     variant = 'default',
 }) => {
-    const { isConnected, address, walletType, openModal, disconnect } =
-        useWallet()
+    // Using your SwapContext hook instead of useWallet
+    const { isConnected, account, connect, disconnect, isConnecting } = useSwap()
     const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false)
+    const [copySuccess, setCopySuccess] = useState<boolean>(false)
 
     // Format address for display
     const formatAddress = (addr: string): string => {
@@ -23,11 +24,12 @@ const WalletButton: React.FC<WalletButtonProps> = ({
 
     // Copy address to clipboard
     const copyAddress = async (): Promise<void> => {
-        if (address) {
+        if (account) {
             try {
-                await navigator.clipboard.writeText(address)
-                // You can add a toast notification here
-                console.log('Address copied to clipboard')
+                await navigator.clipboard.writeText(account)
+                setCopySuccess(true)
+                console.log('Address copied to clipboard:', account)
+                setTimeout(() => setCopySuccess(false), 2000)
             } catch (err) {
                 console.error('Failed to copy address:', err)
             }
@@ -36,9 +38,20 @@ const WalletButton: React.FC<WalletButtonProps> = ({
 
     // Open address in block explorer
     const viewOnExplorer = (): void => {
-        if (address) {
-            const explorerUrl = `https://etherscan.io/address/${address}`
+        if (account) {
+            const explorerUrl = `https://etherscan.io/address/${account}`
             window.open(explorerUrl, '_blank')
+        }
+    }
+
+    // Handle connect wallet
+    const handleConnect = async (): Promise<void> => {
+        try {
+            await connect()
+            console.log('Wallet connected successfully')
+        } catch (error: any) {
+            console.error('Connection failed:', error.message)
+            // You can add toast notification here
         }
     }
 
@@ -46,16 +59,28 @@ const WalletButton: React.FC<WalletButtonProps> = ({
     const handleDisconnect = (): void => {
         disconnect()
         setIsDropdownOpen(false)
+        console.log('Wallet disconnected')
     }
 
-    if (!isConnected) {
+    // Debug logging
+    React.useEffect(() => {
+        console.log('WalletButton state:', {
+            isConnected,
+            account,
+            isConnecting,
+            hasAccount: !!account
+        })
+    }, [isConnected, account, isConnecting])
+
+    if (!isConnected || !account) {
         return (
             <button
-                onClick={openModal}
-                className={`flex cursor-pointer items-center space-x-2 bg-[#3DBEA3] text-white font-medium text-base leading-[17.6px] px-[16px] py-4 rounded-full hover:bg-[#2A8576] transition-colors duration-200 ${className}`}
+                onClick={handleConnect}
+                disabled={isConnecting}
+                className={`flex cursor-pointer items-center space-x-2 bg-[#3DBEA3] text-white font-medium text-base leading-[17.6px] px-[16px] py-4 rounded-full hover:bg-[#2A8576] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
             >
                 <Wallet className="w-5 h-5" />
-                <span>Connect wallet</span>
+                <span>{isConnecting ? 'Connecting...' : 'Connect wallet'}</span>
             </button>
         )
     }
@@ -68,7 +93,7 @@ const WalletButton: React.FC<WalletButtonProps> = ({
                     className={`flex items-center space-x-2 bg-green-100 text-green-800 font-medium px-3 py-2 rounded-full hover:bg-green-200 transition-colors duration-200 ${className}`}
                 >
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm">{formatAddress(address!)}</span>
+                    <span className="text-sm">{formatAddress(account)}</span>
                     <ChevronDown
                         className={`w-4 h-4 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
                     />
@@ -84,12 +109,10 @@ const WalletButton: React.FC<WalletButtonProps> = ({
                         <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-20 py-2">
                             <div className="px-4 py-3 border-b border-gray-100">
                                 <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">
-                                    {walletType === 'metamask'
-                                        ? 'MetaMask'
-                                        : 'WalletConnect'}
+                                    MetaMask
                                 </p>
                                 <p className="text-sm font-mono text-gray-900 mt-1">
-                                    {address}
+                                    {account}
                                 </p>
                             </div>
 
@@ -98,7 +121,7 @@ const WalletButton: React.FC<WalletButtonProps> = ({
                                 className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                             >
                                 <Copy className="w-4 h-4" />
-                                Copy Address
+                                {copySuccess ? 'Copied!' : 'Copy Address'}
                             </button>
 
                             <button
@@ -132,7 +155,7 @@ const WalletButton: React.FC<WalletButtonProps> = ({
                 className={`flex items-center space-x-2 bg-green-100 text-green-800 font-medium text-base leading-[17.6px] px-[16px] py-4 rounded-full hover:bg-green-200 transition-colors duration-200 ${className}`}
             >
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span>{formatAddress(address!)}</span>
+                <span>{formatAddress(account)}</span>
                 <ChevronDown
                     className={`w-4 h-4 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
                 />
@@ -154,13 +177,10 @@ const WalletButton: React.FC<WalletButtonProps> = ({
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">
-                                        Connected with{' '}
-                                        {walletType === 'metamask'
-                                            ? 'MetaMask'
-                                            : 'WalletConnect'}
+                                        Connected with MetaMask
                                     </p>
-                                    <p className="text-sm font-mono text-gray-900 mt-1">
-                                        {address}
+                                    <p className="text-sm font-mono text-gray-900 mt-1 break-all">
+                                        {account}
                                     </p>
                                 </div>
                                 <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
@@ -176,7 +196,7 @@ const WalletButton: React.FC<WalletButtonProps> = ({
                                 className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                             >
                                 <Copy className="w-4 h-4" />
-                                Copy Address
+                                {copySuccess ? 'Copied!' : 'Copy Address'}
                             </button>
 
                             <button

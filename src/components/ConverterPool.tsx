@@ -4,6 +4,7 @@ import { ethers } from 'ethers';
 import { Pool, Position } from '@uniswap/v3-sdk';
 import { Token } from '@uniswap/sdk-core';
 import { POSITION_MANAGER_MINIMAL_ABI, UNISWAP_V3_POOL_ABI } from '../contexts/ABI';
+import Converter1 from './Converter1';
 
 interface LiquidityData {
     poolTokens: number; // Liquidity tokens (scaled)
@@ -17,9 +18,9 @@ const POSITION_MANAGER_ADDRESS = '0x442d8CCae9d8dd3bc4B21494C0eD1ccF4d24F505';
 
 const ConverterPool: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'exchange' | 'pool'>('pool');
-    const { addLiquidity, removeLiquidity, loading } = useLiquidity();
+    const { addLiquidity, loading } = useLiquidity();
     const [tokenId, setTokenId] = useState<string>(''); // User inputs or fetches tokenId
-    const [removePercentage, setRemovePercentage] = useState<number>(100); // Default to 100%
+    const [AddingAmount, setAddingAmount] = useState<number>(100); // Default to 100%
     const [liquidityData, setLiquidityData] = useState<LiquidityData>({
         poolTokens: 0,
         usdtAmount: 0,
@@ -29,7 +30,6 @@ const ConverterPool: React.FC = () => {
     });
     const [isAddingToMetamask, setIsAddingToMetamask] = useState(false);
     const [isAddingLiquidity, setIsAddingLiquidity] = useState(false);
-    const [isRemovingLiquidity, setIsRemovingLiquidity] = useState(false);
 
     // Fetch position and pool data to calculate amounts
     const fetchPositionData = useCallback(async () => {
@@ -121,8 +121,8 @@ const ConverterPool: React.FC = () => {
                 poolAddress: '0x8269d25b908d96169b8e10D0fb12169eF42334e3',
                 tokenA: '0x6082626c05B1aDbb6Dea0750788e60b83A88f41f',
                 tokenB: '0x1000cCa12d1360CE757734270f8a457127A93DaA',
-                amountA: '100',
-                amountB: '100',
+                amountA: AddingAmount.toString(),
+                amountB: AddingAmount.toString(),
             });
             // Optionally update tokenId after minting (requires parsing mint event for tokenId)
             alert('Liquidity added successfully!');
@@ -133,31 +133,12 @@ const ConverterPool: React.FC = () => {
             setIsAddingLiquidity(false);
         }
     };
+    const [showConverter1, setShowConverter1] = useState(false)
 
-    // Handle removing liquidity
-    const handleRemoveLiquidity = async () => {
-        if (!tokenId) {
-            alert('Please enter a valid token ID');
-            return;
-        }
-        if (removePercentage <= 0 || removePercentage > 100) {
-            alert('Please enter a percentage between 1 and 100');
-            return;
-        }
-
-        setIsRemovingLiquidity(true);
-        try {
-            await removeLiquidity(Number(tokenId), removePercentage);
-            alert('Liquidity removed successfully!');
-            // Refresh position data
-            await fetchPositionData();
-        } catch (error) {
-            console.error('Error removing liquidity:', error);
-            alert('Failed to remove liquidity');
-        } finally {
-            setIsRemovingLiquidity(false);
-        }
-    };
+    // Replace your remove liquidity button click handler
+    const handleRemoveLiquidity = () => {
+        setShowConverter1(true)
+    }
 
     // Handle adding token to MetaMask
     const handleAddToMetamask = useCallback(async () => {
@@ -190,7 +171,11 @@ const ConverterPool: React.FC = () => {
     const handleTabChange = (tab: 'exchange' | 'pool') => {
         setActiveTab(tab);
     };
-
+    if (showConverter1) {
+        return (
+            <Converter1 />
+        )
+    }
     return (
         <div className="flex items-center justify-center px-4 min-h-screen">
             <div
@@ -219,9 +204,13 @@ const ConverterPool: React.FC = () => {
                         <h2 className="mb-4 font-bold text-2xl sm:text-3xl leading-[100%] text-black">
                             Your Liquidity
                         </h2>
-                        <p className="text-black font-normal text-xl leading-[18.86px] mb-10">
-                            Remove Liquidity to receive tokens back
-                        </p>
+                        <input
+                            type="text"
+                            placeholder="Enter Token ID To Load Values"
+                            value={tokenId}
+                            onChange={(e) => setTokenId(e.target.value)}
+                            className="w-full mb-4 p-2 rounded-[8px] border border-[#FFFFFF1A] bg-transparent text-black"
+                        />
                         <div className="bg-[#FFFFFF66] rounded-[12px] px-[18px] py-[22px] text-black border border-solid border-[#FFFFFF1A]">
                             <div className="flex items-center space-x-2 mb-2.5">
                                 <div className="size-[24px] bg-yellow-400 rounded-full flex items-center justify-center text-xs font-bold">
@@ -261,21 +250,13 @@ const ConverterPool: React.FC = () => {
                                 <span>Share of Pool</span>
                                 <span>{liquidityData.shareOfPool.toFixed(2)}%</span>
                             </div>
-                            <input
-                                type="text"
-                                placeholder="Enter Position Token ID"
-                                value={tokenId}
-                                onChange={(e) => setTokenId(e.target.value)}
-                                className="w-full mb-4 p-2 rounded-[8px] border border-[#FFFFFF1A] bg-transparent text-black"
-                            />
+
                             <div className="mb-4">
-                                <label className="block text-lg mb-2">Remove Liquidity (%)</label>
+                                <label className="block text-lg mb-2">Add Liquidity</label>
                                 <input
                                     type="number"
-                                    min="1"
-                                    max="100"
-                                    value={removePercentage}
-                                    onChange={(e) => setRemovePercentage(Number(e.target.value))}
+                                    value={AddingAmount}
+                                    onChange={(e) => setAddingAmount(Number(e.target.value))}
                                     className="w-full p-2 rounded-[8px] border border-[#FFFFFF1A] bg-transparent text-black"
                                 />
                             </div>
@@ -288,12 +269,11 @@ const ConverterPool: React.FC = () => {
                                 {isAddingToMetamask ? 'Adding to MetaMask...' : 'Add SWAP-LP Token To Metamask'}
                             </button>
                             <button
-                                onClick={handleRemoveLiquidity}
-                                disabled={isRemovingLiquidity || loading}
+                                onClick={handleRemoveLiquidity}  // Changed this line
                                 className="w-full bg-[#FF4C4C] text-white rounded-[150px] py-4 font-medium text-lg leading-[17.6px] hover:bg-[#D43F3F] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                 type="button"
                             >
-                                {isRemovingLiquidity ? 'Removing Liquidity...' : 'Remove Liquidity'}
+                                Remove Liquidity
                             </button>
                         </div>
                         <button

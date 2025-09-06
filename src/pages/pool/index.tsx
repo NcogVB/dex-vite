@@ -1,11 +1,18 @@
-import { Wallet } from 'lucide-react'
+import { Wallet, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import AskExpertsSection from '../../components/AskExpertsSection'
 import EarnPassiveIncomeSection from '../../components/EarnPassiveIncomeSection'
 import WalletButton from '../../components/WalletButton'
 import JoinCommunity from '../../components/JoinCommunity'
+import { useState } from 'react'
+import ConverterPool from '../../components/ConverterPool'
 
 const Pool = () => {
+    const [isPanelOpen, setIsPanelOpen] = useState(false)
+
+    const openPanel = () => setIsPanelOpen(true)
+    const closePanel = () => setIsPanelOpen(false)
+
     return (
         <div>
             <div className="hero-section">
@@ -22,70 +29,91 @@ const Pool = () => {
                         maximum efficiency.
                     </p>
                     <WalletButton />
-                    <div className="hero-border mt-[56px] w-full p-[3.5px] md:rounded-[40px] rounded-[20px] max-w-[690px]">
+                    {isPanelOpen ? (
+                        // Show ConverterPool with close button inside the div
                         <div className="bg-[linear-gradient(105.87deg,_rgba(0,0,0,0.2)_3.04%,_rgba(0,0,0,0)_96.05%)] relative backdrop-blur-[80px] w-full md:rounded-[40px] rounded-[20px] px-[15px] md:px-[50px] py-[20px] md:py-[60px]">
-                            <div className="relative z-10 border bg-[#FFFFFF66] inline-flex px-2 py-1.5 rounded-[14px] border-solid border-[#FFFFFF1A] mb-6 gap-2">
-                                <Link
-                                    to="/swap"
-                                    className="rounded-[8px] text-black font-normal text-sm leading-[100%] px-[22px] py-[13px] cursor-pointer"
+                            {/* Close Button */}
+                            <div className="flex justify-end mb-4">
+                                <button
+                                    onClick={closePanel}
+                                    className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-colors duration-200"
                                 >
-                                    Exchange
-                                </Link>
-                                <Link
-                                    to="/pool"
-                                    className="rounded-[8px] bg-white text-[#2A8576] font-bold text-sm leading-[100%] px-[22px] py-[13px] cursor-pointer"
-                                >
-                                    Pool
-                                </Link>
+                                    <X className="w-5 h-5" />
+                                </button>
                             </div>
-                            <button
-                                className="relative z-10 w-full bg-[#3DBEA3] text-white font-medium text-base leading-[17.6px] rounded-full flex items-center justify-center space-x-2 mb-6 py-4"
-                                type="button"
-                            >
-                                <Wallet />
-                                <span>Add Liquidity</span>
-                            </button>
-                            <div className="relative z-10 rounded-[12px] border bg-[#FFFFFF66] border-solid border-[#FFFFFF1A] p-10 text-center">
-                                <svg
-                                    className="mx-auto mb-[22px]"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="64"
-                                    height="64"
-                                    fill="none"
-                                >
-                                    <path
-                                        stroke="#2A8576"
-                                        stroke-linecap="round"
-                                        stroke-width="3.5"
-                                        d="M5.333 5.333h53.333"
-                                    />
-                                    <path
-                                        stroke="#3DBEA3"
-                                        stroke-linecap="round"
-                                        stroke-width="3.5"
-                                        d="m24 28 3.448-3.448c.889-.889 1.333-1.333 1.885-1.333.553 0 .997.444 1.886 1.333l1.562 1.562c.889.89 1.333 1.334 1.886 1.334.552 0 .996-.445 1.885-1.334L40 22.667"
-                                    />
-                                    <path
-                                        stroke="#2A8576"
-                                        stroke-linecap="round"
-                                        stroke-width="3.5"
-                                        d="M32 56V45.333M26.667 58.667 32 56M37.333 58.667 32 56"
-                                    />
-                                    <path
-                                        stroke="#2A8576"
-                                        stroke-width="3.5"
-                                        d="M53.334 5.333V28c0 8.171 0 12.257-2.678 14.795-2.678 2.538-6.988 2.538-15.608 2.538h-6.095c-8.62 0-12.93 0-15.608-2.538-2.678-2.538-2.678-6.624-2.678-14.795V5.333"
-                                    />
-                                </svg>
 
-                                <p className="text-black font-semibold text-xl leading-7 max-w-[380px] mx-auto">
-                                    Your Active V2 Liquidity positions
-                                    <br />
-                                    will appear here
-                                </p>
+                            {/* ConverterPool Component */}
+                            <div className="relative z-10">
+                                <ConverterPool />
                             </div>
                         </div>
-                    </div>
+                    ) : (
+                        <div className="hero-border mt-[56px] w-full p-[3.5px] md:rounded-[40px] rounded-[20px] max-w-[690px]">
+                            <div className="bg-[linear-gradient(105.87deg,_rgba(0,0,0,0.2)_3.04%,_rgba(0,0,0,0)_96.05%)] relative backdrop-blur-[80px] w-full md:rounded-[40px] rounded-[20px] px-[15px] md:px-[50px] py-[20px] md:py-[60px]">
+                                <div className="relative z-10 border bg-[#FFFFFF66] inline-flex px-2 py-1.5 rounded-[14px] border-solid border-[#FFFFFF1A] mb-6 gap-2">
+                                    <Link
+                                        to="/swap"
+                                        className="rounded-[8px] text-black font-normal text-sm leading-[100%] px-[22px] py-[13px] cursor-pointer"
+                                    >
+                                        Exchange
+                                    </Link>
+                                    <Link
+                                        to="/pool"
+                                        className="rounded-[8px] bg-white text-[#2A8576] font-bold text-sm leading-[100%] px-[22px] py-[13px] cursor-pointer"
+                                    >
+                                        Pool
+                                    </Link>
+                                </div>
+                                <button
+                                    onClick={openPanel}
+                                    className={`relative z-10 w-full bg-[#3DBEA3] text-white font-medium text-base leading-[17.6px] rounded-full flex items-center justify-center space-x-2 mb-6 py-4 hover:bg-[#2A8576] transition-colors duration-200`}
+                                    type="button"
+                                >
+                                    <Wallet />
+                                    <span>Add Liquidity</span>
+                                </button>
+                                <div className="relative z-10 rounded-[12px] border bg-[#FFFFFF66] border-solid border-[#FFFFFF1A] p-10 text-center">
+                                    <svg
+                                        className="mx-auto mb-[22px]"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="64"
+                                        height="64"
+                                        fill="none"
+                                    >
+                                        <path
+                                            stroke="#2A8576"
+                                            strokeLinecap="round"
+                                            strokeWidth="3.5"
+                                            d="M5.333 5.333h53.333"
+                                        />
+                                        <path
+                                            stroke="#3DBEA3"
+                                            strokeLinecap="round"
+                                            strokeWidth="3.5"
+                                            d="m24 28 3.448-3.448c.889-.889 1.333-1.333 1.885-1.333.553 0 .997.444 1.886 1.333l1.562 1.562c.889.89 1.333 1.334 1.886 1.334.552 0 .996-.445 1.885-1.334L40 22.667"
+                                        />
+                                        <path
+                                            stroke="#2A8576"
+                                            strokeLinecap="round"
+                                            strokeWidth="3.5"
+                                            d="M32 56V45.333M26.667 58.667 32 56M37.333 58.667 32 56"
+                                        />
+                                        <path
+                                            stroke="#2A8576"
+                                            strokeWidth="3.5"
+                                            d="M53.334 5.333V28c0 8.171 0 12.257-2.678 14.795-2.678 2.538-6.988 2.538-15.608 2.538h-6.095c-8.62 0-12.93 0-15.608-2.538-2.678-2.538-2.678-6.624-2.678-14.795V5.333"
+                                        />
+                                    </svg>
+
+                                    <p className="text-black font-semibold text-xl leading-7 max-w-[380px] mx-auto">
+                                        Your Active V2 Liquidity positions
+                                        <br />
+                                        will appear here
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
             <section className="md:py-[90px] py-[40px] px-4">
