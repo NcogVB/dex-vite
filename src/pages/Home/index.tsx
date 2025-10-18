@@ -1,23 +1,23 @@
-import AskExpertsSection from '../../components/AskExpertsSection'
-import EarnPassiveIncomeSection from '../../components/EarnPassiveIncomeSection'
-import HeroSection from '../../components/HeroSection'
-import MarketTrend from '../../components/MarketTrend'
-import PeopleLoveSection from '../../components/PeopleLoveSection'
-import SecurelyConnectsSection from '../../components/SecurelyConnectsSection'
-import StartInSecondsSection from '../../components/StartInSecondsSection'
-import TrustSection from '../../components/TrustSection'
+import NewHeroSection from '../../components/NewHeroSection'
+import ExchangeSection from '../../components/ExchangeSection'
+import AboutSection from '../../components/AboutSection'
+import FeaturesSection from '../../components/FeaturesSection'
+import WhyChooseSection from '../../components/WhyChooseSection'
+import HowItWorksSection from '../../components/HowItWorksSection'
+import FAQSection from '../../components/FAQSection'
+import CTASection from '../../components/CTASection'
 
 function Home() {
     return (
         <>
-            <HeroSection />
-            <SecurelyConnectsSection />
-            <MarketTrend />
-            <TrustSection />
-            <StartInSecondsSection />
-            <AskExpertsSection />
-            <PeopleLoveSection />
-            <EarnPassiveIncomeSection />
+            <NewHeroSection />
+            <ExchangeSection />
+            <AboutSection />
+            <FeaturesSection />
+            <WhyChooseSection />
+            <HowItWorksSection />
+            <FAQSection />
+            <CTASection />
         </>
     )
 }
