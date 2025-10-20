@@ -5,11 +5,9 @@ const ExchangeSection = () => {
     const [fromChain, setFromChain] = useState('Ethereum Mainnet')
     const [toChain, setToChain] = useState('BNB Chain')
     const [fromToken, setFromToken] = useState('USDT')
-    const [toToken, setToToken] = useState('USDT')
     const [fromDropdown, setFromDropdown] = useState(false)
     const [toDropdown, setToDropdown] = useState(false)
     const [fromTokenDropdown, setFromTokenDropdown] = useState(false)
-    const [toTokenDropdown, setToTokenDropdown] = useState(false)
 
     const chains = [
         { name: 'BNB Chain', image: '/images-new/bnb-chain.svg' },
