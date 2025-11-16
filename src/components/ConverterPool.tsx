@@ -17,7 +17,6 @@ interface LiquidityData {
 const POSITION_MANAGER_ADDRESS = '0x442d8CCae9d8dd3bc4B21494C0eD1ccF4d24F505';
 
 const ConverterPool: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'exchange' | 'pool'>('pool');
     const { addLiquidity, loading } = useLiquidity();
     const [tokenId, setTokenId] = useState<string>(''); // User inputs or fetches tokenId
     const [AddingAmount, setAddingAmount] = useState<number>(100); // Default to 100%
@@ -168,137 +167,113 @@ const ConverterPool: React.FC = () => {
         }
     }, []);
 
-    const handleTabChange = (tab: 'exchange' | 'pool') => {
-        setActiveTab(tab);
-    };
     if (showConverter1) {
         return (
             <Converter1 />
         )
     }
     return (
-        <div className="flex items-center justify-center px-4 min-h-screen">
-            <div
-                className="hero-border w-full p-[3.5px] md:rounded-[40px] rounded-[20px] max-w-[690px]"
-                style={{ fontFamily: '"Noto Sans", sans-serif' }}
-            >
-                <div className="bg-[linear-gradient(105.87deg,rgba(0,0,0,0.3)_3.04%,rgba(0,0,0,0.1)_96.05%)] relative backdrop-blur-[80px] w-full md:rounded-[40px] rounded-[20px] px-[15px] md:px-[50px] py-[20px] md:py-[60px]">
-                    <div className="relative z-10 border bg-[#FFFFFF66] inline-flex px-2 py-1.5 rounded-[14px] border-solid border-[#FFFFFF1A] gap-2 mb-[24px]">
-                        <button
-                            onClick={() => handleTabChange('exchange')}
-                            className={`rounded-[8px] font-normal text-sm leading-[100%] px-[22px] py-[13px] transition-all duration-200 ${activeTab === 'exchange' ? 'bg-white text-[#2A8576] font-bold' : 'text-black hover:bg-white/20'
-                                }`}
-                        >
-                            Exchange
-                        </button>
-                        <button
-                            onClick={() => handleTabChange('pool')}
-                            className={`rounded-[8px] font-normal text-sm leading-[100%] px-[22px] py-[13px] transition-all duration-200 ${activeTab === 'pool' ? 'bg-white text-[#2A8576] font-bold' : 'text-black hover:bg-white/20'
-                                }`}
-                        >
-                            Pool
-                        </button>
-                    </div>
-
-                    <div>
-                        <h2 className="mb-4 font-bold text-2xl sm:text-3xl leading-[100%] text-black">
-                            Your Liquidity
-                        </h2>
-                        <input
-                            type="text"
-                            placeholder="Enter Token ID To Load Values"
-                            value={tokenId}
-                            onChange={(e) => setTokenId(e.target.value)}
-                            className="w-full mb-4 p-2 rounded-[8px] border border-[#FFFFFF1A] bg-transparent text-black"
-                        />
-                        <div className="bg-[#FFFFFF66] rounded-[12px] px-[18px] py-[22px] text-black border border-solid border-[#FFFFFF1A]">
-                            <div className="flex items-center space-x-2 mb-2.5">
-                                <div className="size-[24px] bg-yellow-400 rounded-full flex items-center justify-center text-xs font-bold">
-                                    T
-                                </div>
-                                <div className="size-[24px] bg-blue-500 rounded-full flex items-center justify-center text-xs font-bold text-white">
-                                    $
-                                </div>
-                                <span className="font-bold text-lg leading-[100%]">USDT - USDC</span>
-                            </div>
-                            <div className="font-bold text-lg leading-[100%] mb-4">
-                                {liquidityData.poolTokens.toFixed(11)}
-                            </div>
-                            <div className="flex justify-between mb-2">
-                                <div className="flex items-center space-x-2">
-                                    <div className="size-[30px] bg-yellow-400 rounded-full flex items-center justify-center text-sm font-bold">
-                                        T
-                                    </div>
-                                    <span className="font-normal text-lg leading-[100%]">USDT</span>
-                                </div>
-                                <span className="font-normal text-lg leading-[100%]">{liquidityData.usdtAmount.toFixed(5)}</span>
-                            </div>
-                            <div className="flex justify-between mb-3">
-                                <div className="flex items-center space-x-2">
-                                    <div className="size-[30px] bg-blue-500 rounded-full flex items-center justify-center text-sm font-bold text-white">
-                                        $
-                                    </div>
-                                    <span className="font-normal text-lg leading-[100%]">USDC</span>
-                                </div>
-                                <span className="font-normal text-lg leading-[100%]">{liquidityData.ethAmount.toFixed(10)}</span>
-                            </div>
-                            <div className="flex justify-between mb-3 font-normal text-lg leading-[100%]">
-                                <span>Reward</span>
-                                <span>{liquidityData.reward ? liquidityData.reward.toFixed(6) : '-'}</span>
-                            </div>
-                            <div className="flex justify-between mb-6 font-normal text-lg leading-[100%]">
-                                <span>Share of Pool</span>
-                                <span>{liquidityData.shareOfPool.toFixed(2)}%</span>
-                            </div>
-
-                            <div className="mb-4">
-                                <label className="block text-lg mb-2">Add Liquidity</label>
-                                <input
-                                    type="number"
-                                    value={AddingAmount}
-                                    onChange={(e) => setAddingAmount(Number(e.target.value))}
-                                    className="w-full p-2 rounded-[8px] border border-[#FFFFFF1A] bg-transparent text-black"
-                                />
-                            </div>
-                            <button
-                                onClick={handleAddToMetamask}
-                                disabled={isAddingToMetamask}
-                                className="w-full border-2 border-solid border-[#2A8576] text-[#2A8576] rounded-[150px] py-4 font-medium text-lg leading-[17.6px] hover:bg-[#2A8576] hover:text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mb-4"
-                                type="button"
-                            >
-                                {isAddingToMetamask ? 'Adding to MetaMask...' : 'Add SWAP-LP Token To Metamask'}
-                            </button>
-                            <button
-                                onClick={handleRemoveLiquidity}  // Changed this line
-                                className="w-full bg-[#FF4C4C] text-white rounded-[150px] py-4 font-medium text-lg leading-[17.6px] hover:bg-[#D43F3F] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                type="button"
-                            >
-                                Remove Liquidity
-                            </button>
+        <div className="w-full">
+            <div>
+                <h2 className="mb-6 font-semibold text-2xl sm:text-3xl leading-[100%] text-[#FFFFFF]">
+                    Your Liquidity
+                </h2>
+                <input
+                    type="text"
+                    placeholder="Enter Token ID To Load Values"
+                    value={tokenId}
+                    onChange={(e) => setTokenId(e.target.value)}
+                    className="w-full mb-6 p-4 rounded-[12px] border border-[#FFFFFF33] bg-[#00000066] text-[#FFFFFF] placeholder:text-[#FFFFFF66] focus:outline-none focus:border-[#C9FA49] transition-colors"
+                />
+                <div className="bg-[#00000066] rounded-[16px] px-[20px] py-[24px] text-[#FFFFFF] border border-solid border-[#FFFFFF33]">
+                    <div className="flex items-center space-x-2 mb-4">
+                        <div className="size-[30px] bg-[#C9FA49] rounded-full flex items-center justify-center text-sm font-bold text-black">
+                            T
                         </div>
-                        <button
-                            onClick={handleAddLiquidity}
-                            disabled={isAddingLiquidity || loading}
-                            className="mt-10 w-full bg-[#3DBEA3] text-white rounded-full py-4 flex items-center justify-center gap-3 font-medium text-base leading-[17.6px] hover:bg-[#2A8576] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                            type="button"
-                        >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="17"
-                                height="16"
-                                fill="none"
-                            >
-                                <path
-                                    stroke="#fff"
-                                    strokeLinecap="round"
-                                    strokeWidth="2"
-                                    d="M4.5 8h4m0 0h4m-4 0V4m0 4v4"
-                                />
-                            </svg>
-                            {isAddingLiquidity ? 'Adding Liquidity...' : 'Add Liquidity'}
-                        </button>
+                        <div className="size-[30px] bg-[#3DBEA3] rounded-full flex items-center justify-center text-sm font-bold text-white">
+                            $
+                        </div>
+                        <span className="font-bold text-xl leading-[100%]">USDT - USDC</span>
                     </div>
+                    <div className="font-bold text-2xl leading-[100%] mb-6 text-[#C9FA49]">
+                        {liquidityData.poolTokens.toFixed(11)}
+                    </div>
+                    <div className="flex justify-between mb-3 p-3 bg-[#FFFFFF0D] rounded-lg">
+                        <div className="flex items-center space-x-3">
+                            <div className="size-[32px] bg-[#C9FA49] rounded-full flex items-center justify-center text-sm font-bold text-black">
+                                T
+                            </div>
+                            <span className="font-medium text-base leading-[100%]">USDT</span>
+                        </div>
+                        <span className="font-semibold text-base leading-[100%]">{liquidityData.usdtAmount.toFixed(5)}</span>
+                    </div>
+                    <div className="flex justify-between mb-4 p-3 bg-[#FFFFFF0D] rounded-lg">
+                        <div className="flex items-center space-x-3">
+                            <div className="size-[32px] bg-[#3DBEA3] rounded-full flex items-center justify-center text-sm font-bold text-white">
+                                $
+                            </div>
+                            <span className="font-medium text-base leading-[100%]">USDC</span>
+                        </div>
+                        <span className="font-semibold text-base leading-[100%]">{liquidityData.ethAmount.toFixed(10)}</span>
+                    </div>
+
+                    <div className="border-t border-[#FFFFFF33] my-4"></div>
+
+                    <div className="flex justify-between mb-3 font-medium text-base leading-[100%]">
+                        <span className="text-[#FFFFFF99]">Reward</span>
+                        <span className="text-[#C9FA49]">{liquidityData.reward ? liquidityData.reward.toFixed(6) : '-'}</span>
+                    </div>
+                    <div className="flex justify-between mb-6 font-medium text-base leading-[100%]">
+                        <span className="text-[#FFFFFF99]">Share of Pool</span>
+                        <span className="text-[#C9FA49]">{liquidityData.shareOfPool.toFixed(2)}%</span>
+                    </div>
+
+                    <div className="mb-4">
+                        <label className="block text-base font-medium mb-3 text-[#FFFFFF]">Add Liquidity Amount</label>
+                        <input
+                            type="number"
+                            value={AddingAmount}
+                            onChange={(e) => setAddingAmount(Number(e.target.value))}
+                            className="w-full p-4 rounded-[12px] border border-[#FFFFFF33] bg-[#FFFFFF0D] text-[#FFFFFF] placeholder:text-[#FFFFFF66] focus:outline-none focus:border-[#C9FA49] transition-colors"
+                        />
+                    </div>
+                    <button
+                        onClick={handleAddToMetamask}
+                        disabled={isAddingToMetamask}
+                        className="w-full border-2 border-solid border-[#C9FA49] text-[#C9FA49] rounded-[40px] py-4 font-medium text-base leading-[17.6px] hover:bg-[#C9FA49] hover:text-[#000000] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+                        type="button"
+                    >
+                        {isAddingToMetamask ? 'Adding to MetaMask...' : 'Add SWAP-LP Token To Metamask'}
+                    </button>
+                    <button
+                        onClick={handleRemoveLiquidity}
+                        className="w-full bg-[#FF4C4C] text-white rounded-[40px] py-4 font-medium text-base leading-[17.6px] hover:bg-[#D43F3F] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        type="button"
+                    >
+                        Remove Liquidity
+                    </button>
                 </div>
+                <button
+                    onClick={handleAddLiquidity}
+                    disabled={isAddingLiquidity || loading}
+                    className="mt-6 w-full bg-[#C9FA49] text-[#000000] rounded-[40px] py-4 flex items-center justify-center gap-3 font-semibold text-base leading-[17.6px] hover:bg-[#b8e842] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    type="button"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="17"
+                        height="16"
+                        fill="none"
+                    >
+                        <path
+                            stroke="currentColor"
+                            strokeLinecap="round"
+                            strokeWidth="2"
+                            d="M4.5 8h4m0 0h4m-4 0V4m0 4v4"
+                        />
+                    </svg>
+                    {isAddingLiquidity ? 'Adding Liquidity...' : 'Add Liquidity'}
+                </button>
             </div>
         </div>
     );

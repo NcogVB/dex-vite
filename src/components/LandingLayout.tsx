@@ -17,7 +17,9 @@ const LandingLayout = () => {
     return (
         <>
             <LandingHeader />
-            <Outlet />
+            <main className="pt-[100px]">
+                <Outlet />
+            </main>
             <LandingFooter />
         </>
     )

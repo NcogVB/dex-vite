@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import TradingDashboard from '../../components/TradingDashboard'
-import { ChevronDown, CircleQuestionMarkIcon } from 'lucide-react'
-import EarnPassiveIncomeSection from '../../components/EarnPassiveIncomeSection'
-import AskExpertsSection from '../../components/AskExpertsSection'
-import WalletButton from '../../components/WalletButton'
-import JoinCommunity from '../../components/JoinCommunity'
+import { ChevronDown } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import ChooseDEXSection from '../../components/ChooseDEXSection'
 
 interface Token {
     symbol: string
@@ -39,7 +37,7 @@ const Limit = () => {
         },
     ]
 
-    // State management with proper types
+    // State management
     const [fromToken, setFromToken] = useState<Token>(tokens[0])
     const [toToken, setToToken] = useState<Token>(tokens[1])
     const [fromAmount, setFromAmount] = useState<string>('')
@@ -49,20 +47,19 @@ const Limit = () => {
     const [isFromDropdownOpen, setIsFromDropdownOpen] = useState<boolean>(false)
     const [isToDropdownOpen, setIsToDropdownOpen] = useState<boolean>(false)
     const [slippageTolerance, setSlippageTolerance] = useState<number>(1)
+    const [activeTab, setActiveTab] = useState<'open' | 'history'>('open')
 
-    // Refs for dropdown management with proper types
+    // Refs for dropdown management
     const fromDropdownRef = useRef<HTMLDivElement>(null)
     const toDropdownRef = useRef<HTMLDivElement>(null)
 
-    // Mock exchange rate (in real app, this would come from API)
-    const exchangeRate: number = 0.000025 // 1 USDT = 0.000025 BTC (example)
+    // Mock exchange rate
+    const exchangeRate: number = 0.000025
 
     // Calculate exchange amounts
     useEffect(() => {
         if (fromAmount && !isNaN(Number(fromAmount))) {
-            const calculatedAmount = (
-                parseFloat(fromAmount) * exchangeRate
-            ).toFixed(6)
+            const calculatedAmount = (parseFloat(fromAmount) * exchangeRate).toFixed(6)
             setToAmount(calculatedAmount)
         } else {
             setToAmount('')
@@ -74,30 +71,20 @@ const Limit = () => {
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as Node
 
-            if (
-                fromDropdownRef.current &&
-                !fromDropdownRef.current.contains(target)
-            ) {
+            if (fromDropdownRef.current && !fromDropdownRef.current.contains(target)) {
                 setIsFromDropdownOpen(false)
             }
-            if (
-                toDropdownRef.current &&
-                !toDropdownRef.current.contains(target)
-            ) {
+            if (toDropdownRef.current && !toDropdownRef.current.contains(target)) {
                 setIsToDropdownOpen(false)
             }
         }
 
         document.addEventListener('mousedown', handleClickOutside)
-        return () =>
-            document.removeEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
 
     // Handle percentage selection
-    const handlePercentageSelect = (
-        percentage: string,
-        isFrom: boolean = true
-    ): void => {
+    const handlePercentageSelect = (percentage: string, isFrom: boolean = true): void => {
         const token = isFrom ? fromToken : toToken
         const amount = (token.balance * (Number(percentage) / 100)).toFixed(6)
 
@@ -133,10 +120,7 @@ const Limit = () => {
     }
 
     // Handle amount input
-    const handleAmountChange = (
-        value: string,
-        isFrom: boolean = true
-    ): void => {
+    const handleAmountChange = (value: string, isFrom: boolean = true): void => {
         if (isFrom) {
             setFromAmount(value)
         } else {
@@ -160,129 +144,86 @@ const Limit = () => {
 
     return (
         <div>
-            <div className="hero-section">
-                <div className="flex-grow flex flex-col items-center px-4 pt-[40px] md:pt-[88px] container mx-auto w-full">
-                    <JoinCommunity />
-                    <h1 className="font-semibold text-[40px] leading-[48px] md:text-[80px] md:leading-[88px] align-middle capitalize mb-3 text-[#3DBEA3] max-w-[720px] text-center mx-auto">
-                        <span className="text-[#2A8576]"> Pool </span> Exchange
-                        with DEX.
+            {/* Hero Section */}
+            <section className="md:py-[110px] py-[50px] relative overflow-hidden">
+                <div className="w-full max-w-[1250px] mx-auto px-4 relative z-[1]">
+                    <h1 className="xl:text-[80px] lg:text-6xl md:text-5xl text-3xl text-center font-semibold xl:leading-[100px] bg-[linear-gradient(180deg,#F1F1EF_0%,rgba(241,241,239,0.3)_100%)] bg-clip-text text-transparent">
+                        Limit Order <br className="md:block hidden" /> with DEX.
                     </h1>
-                    <p className="text-center font-normal md:text-[17.72px] md:leading-7 text-[#767676] max-w-[700px] mb-6">
-                        At our cryptocurrency token exchange platform, we offer
-                        an easy-to-use token swap service that allows you to
-                        seamlessly exchange one type of token for another with
-                        maximum efficiency.
+                    <p className="xl:text-lg md:text-base sm:text-sm text-xs text-[#FFFFFF] font-normal text-center w-full max-w-[690px] mx-auto md:my-[50px] my-[25px]">
+                        DEX Limit Orders give you full control over when and how your trades execute. Instead of accepting the current market price, you set the price you want — and the system automatically completes the trade once conditions are met. It's precision trading made simple, secure, and fully decentralized.
                     </p>
-                    <WalletButton />
-                    <div className=" mt-[150px] mb-[150px] w-full  md:rounded-[40px] rounded-[20px]">
-                        <TradingDashboard />
-                        <div className=" hero-border p-[3.5px] bg-[linear-gradient(105.87deg,_rgba(0,0,0,0.2)_3.04%,_rgba(0,0,0,0)_96.05%)] relative backdrop-blur-[80px] w-full md:rounded-[40px] rounded-[20px] px-[15px] md:px-[50px] py-[20px] md:py-[60px]">
-                            <div className="flex flex-col md:flex-row items-center gap-[25px] md:gap-[51px]">
-                                {/* FROM TOKEN SECTION */}
-                                <div className="flex-1 w-full">
-                                    <div className="bg-[#FFFFFF66] border border-solid border-[#FFFFFF1A] rounded-[12px] px-[15px] py-[18px]">
-                                        <div className="flex items-center justify-between font-normal text-sm leading-[18.86px] text-black mb-3">
-                                            <span>
-                                                Availability:{' '}
-                                                {fromToken.balance.toFixed(3)}
-                                            </span>
-                                            <button
-                                                onClick={() =>
-                                                    handleMaxAmount(true)
-                                                }
-                                                className="underline hover:text-[#3DBEA3] cursor-pointer"
-                                            >
-                                                Max:{' '}
-                                                {fromToken.balance.toFixed(3)}
-                                            </button>
-                                        </div>
-                                        <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-center md:gap-[50px] gap-5">
+                        <Link
+                            to="/swap"
+                            className="text-[#000000] bg-[#C9FA49] md:text-base text-sm leading-[1] font-normal md:p-[20px_40px] p-[15px_30px] rounded-[40px] border border-transparent transition-all duration-300 hover:border-[#C9FA49] hover:bg-transparent hover:text-white"
+                        >
+                            Connect Wallet
+                        </Link>
+                    </div>
+                </div>
+            </section>
+
+            {/* Trading Form Section */}
+            <section className="relative">
+                <img
+                    className="absolute bottom-[220px] left-0 w-full"
+                    src="/images-new/hero-curve-others.png"
+                    alt="hero curve"
+                />
+                <div className="w-full max-w-[1250px] mx-auto px-4 relative z-[1]">
+                    <div className="relative md:rounded-[40px] rounded-[20px] p-[2px] bg-[radial-gradient(98%_49.86%_at_100.03%_100%,#75912B_0%,rgba(117,145,43,0.05)_100%),radial-gradient(24.21%_39.21%_at_0%_0%,rgba(255,255,255,0.81)_0%,rgba(255,255,255,0.19)_100%),radial-gradient(21.19%_40.1%_at_100.03%_0%,rgba(0,0,0,0.5)_0%,rgba(0,0,0,0)_100%)]">
+                        <div className="md:rounded-[40px] rounded-[20px] bg-[linear-gradient(0deg,rgba(0,0,0,1)_10%,rgba(0,0,0,0.50)_100%)] backdrop-blur-sm lg:p-[60px_50px] sm:p-[30px] p-[15px]">
+                            <div className="flex lg:flex-row flex-col lg:items-end items-center">
+                                {/* From Token Section */}
+                                <div className="flex-grow lg:w-[50%] w-full">
+                                    <div className="flex items-start justify-between bg-[#00000066] border border-[#FFFFFF33] rounded-xl md:p-5 p-3">
+                                        <div>
+                                            <h3 className="text-sm font-light text-[#FFFFFF] mb-4">
+                                                Availability: {fromToken.balance.toFixed(3)}
+                                            </h3>
                                             <input
                                                 type="number"
                                                 value={fromAmount}
-                                                onChange={(e) =>
-                                                    handleAmountChange(
-                                                        e.target.value,
-                                                        true
-                                                    )
-                                                }
-                                                placeholder="0.000"
-                                                className="text-black font-bold text-[22px] leading-[31.43px] bg-transparent border-none outline-none flex-1 mr-4"
+                                                onChange={(e) => handleAmountChange(e.target.value, true)}
+                                                className="md:text-xl text-sm font-bold text-white bg-transparent border-none outline-none"
+                                                placeholder="0.00"
                                             />
-                                            <div
-                                                className="relative min-w-[95px]"
-                                                ref={fromDropdownRef}
+                                        </div>
+                                        <div>
+                                            <h3
+                                                onClick={() => handleMaxAmount(true)}
+                                                className="text-sm font-light text-[#FFFFFF] border-b border-[#FFFFFF] w-max ml-auto mb-4 cursor-pointer hover:text-[#C9FA49]"
                                             >
+                                                Max: {fromToken.balance.toFixed(3)}
+                                            </h3>
+                                            <div className="relative" ref={fromDropdownRef}>
                                                 <button
-                                                    onClick={() =>
-                                                        setIsFromDropdownOpen(
-                                                            !isFromDropdownOpen
-                                                        )
-                                                    }
-                                                    aria-expanded={
-                                                        isFromDropdownOpen
-                                                    }
-                                                    aria-haspopup="listbox"
-                                                    className="token-button w-full flex items-center cursor-pointer select-none hover:bg-white hover:bg-opacity-20 rounded-lg p-1 transition-colors"
-                                                    type="button"
+                                                    className="flex items-center gap-2 cursor-pointer"
+                                                    onClick={() => setIsFromDropdownOpen(!isFromDropdownOpen)}
                                                 >
-                                                    <img
-                                                        className="token-img rounded-full shadow-[0px_6px_10px_0px_#00000013] size-[23px] min-w-[23px]"
-                                                        alt={fromToken.name}
-                                                        src={fromToken.img}
-                                                    />
-                                                    <span className="token-label text-[#000000] text-[16px] font-normal text-left flex-grow ml-3 mr-8">
-                                                        {fromToken.symbol}
+                                                    <span className="flex items-center gap-2 md:text-sm text-xs uppercase font-normal text-[#FFFFFF]">
+                                                        <img src={fromToken.img} className="size-[24px] rounded-full" alt="" />
+                                                        <span>{fromToken.symbol}</span>
                                                     </span>
                                                     <ChevronDown
-                                                        className={`token-arrow transition-transform ${
-                                                            isFromDropdownOpen
-                                                                ? 'rotate-180'
-                                                                : ''
+                                                        className={`transition-transform text-white ${
+                                                            isFromDropdownOpen ? 'rotate-180' : ''
                                                         }`}
                                                     />
                                                 </button>
                                                 {isFromDropdownOpen && (
-                                                    <ul
-                                                        className="token-list absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg max-h-48 overflow-auto ring-1 ring-black ring-opacity-5 text-[13px] font-normal text-black"
-                                                        role="listbox"
-                                                        tabIndex={-1}
-                                                    >
+                                                    <ul className="absolute right-0 top-full w-full bg-[#000000] border border-[#FFFFFF1A] rounded shadow mt-1 z-10 min-w-[130px] text-xs text-[#FFFFFF]">
                                                         {tokens
-                                                            .filter(
-                                                                (token) =>
-                                                                    token.symbol !==
-                                                                    toToken.symbol
-                                                            )
-                                                            .map((token) => (
+                                                            .filter((token) => token.symbol !== toToken.symbol)
+                                                            .map((token, index) => (
                                                                 <li
-                                                                    key={
-                                                                        token.symbol
-                                                                    }
-                                                                    onClick={() =>
-                                                                        handleTokenSelect(
-                                                                            token,
-                                                                            true
-                                                                        )
-                                                                    }
-                                                                    className="token-item cursor-pointer select-none relative py-2 pl-3 pr-9 flex items-center hover:bg-gray-100"
-                                                                    role="option"
-                                                                    tabIndex={0}
+                                                                    key={index}
+                                                                    className="p-2 flex items-center gap-2 hover:bg-[#5f7a17] cursor-pointer"
+                                                                    onClick={() => handleTokenSelect(token, true)}
                                                                 >
-                                                                    <img
-                                                                        alt={
-                                                                            token.name
-                                                                        }
-                                                                        className="w-6 h-6 mr-2"
-                                                                        height="24"
-                                                                        src={
-                                                                            token.img
-                                                                        }
-                                                                        width="24"
-                                                                    />
-                                                                    {
-                                                                        token.symbol
-                                                                    }
+                                                                    <img src={token.img} className="size-[24px] rounded-full" alt="" />
+                                                                    <span>{token.symbol}</span>
                                                                 </li>
                                                             ))}
                                                     </ul>
@@ -290,166 +231,88 @@ const Limit = () => {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="mt-4 flex gap-3 percentage-redio-buttons">
-                                        {['25', '50', '75', '100'].map(
-                                            (percentage) => (
-                                                <div
-                                                    key={percentage}
-                                                    className="flex-1"
+                                    {/* Percentage Buttons */}
+                                    <div className="grid grid-cols-4 gap-3 mt-2 w-full">
+                                        {['25', '50', '75', '100'].map((percentage) => (
+                                            <div key={percentage} className="flex-1">
+                                                <input
+                                                    id={`r${percentage}`}
+                                                    name="progress"
+                                                    type="radio"
+                                                    className="sr-only peer"
+                                                    checked={fromPercentage === percentage}
+                                                    onChange={() => handlePercentageSelect(percentage, true)}
+                                                />
+                                                <label
+                                                    htmlFor={`r${percentage}`}
+                                                    className="flex items-center justify-center text-center rounded-lg font-normal text-sm cursor-pointer h-[43px] border border-[#00000033] bg-[#00000066] text-white peer-checked:text-black peer-checked:bg-[#C9FA49] peer-checked:font-bold"
                                                 >
-                                                    <input
-                                                        type="radio"
-                                                        name="1st_percentage"
-                                                        id={`${percentage}_percentage`}
-                                                        className="peer hidden"
-                                                        checked={
-                                                            fromPercentage ===
-                                                            percentage
-                                                        }
-                                                        onChange={() =>
-                                                            handlePercentageSelect(
-                                                                percentage,
-                                                                true
-                                                            )
-                                                        }
-                                                    />
-                                                    <label
-                                                        htmlFor={`${percentage}_percentage`}
-                                                        className="cursor-pointer w-full block bg-[#FFFFFF66] border border-solid border-[#FFFFFF1A] rounded-md py-[5px] md:py-[11px] text-[16px] md:text-base font-semibold text-[#80888A] md:text-[#1D3B5E] text-center hover:bg-[#3DBEA3] hover:text-white transition-colors peer-checked:bg-[#3DBEA3] peer-checked:text-white"
-                                                    >
-                                                        {percentage}%
-                                                    </label>
-                                                </div>
-                                            )
-                                        )}
+                                                    {percentage}%
+                                                </label>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
 
-                                {/* SWAP BUTTON */}
-                                <div>
-                                    <button
-                                        onClick={handleSwapTokens}
-                                        className="hover:bg-gray-100 p-2 rounded-full transition-colors"
-                                    >
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            width="28"
-                                            height="29"
-                                            fill="none"
-                                        >
-                                            <path
-                                                fill="#000"
-                                                d="M19.876.5H8.138C3.04.5 0 3.538 0 8.634v11.718c0 5.11 3.04 8.148 8.138 8.148h11.724C24.96 28.5 28 25.462 28 20.366V8.634C28.014 3.538 24.974.5 19.876.5Zm-7.284 21c0 .14-.028.266-.084.406a1.095 1.095 0 0 1-.574.574 1.005 1.005 0 0 1-.406.084 1.056 1.056 0 0 1-.743-.308l-4.132-4.13a1.056 1.056 0 0 1 0-1.484 1.057 1.057 0 0 1 1.485 0l2.34 2.338V7.5c0-.574.476-1.05 1.05-1.05.574 0 1.064.476 1.064 1.05v14Zm8.755-9.128a1.04 1.04 0 0 1-.743.308 1.04 1.04 0 0 1-.742-.308l-2.34-2.338V21.5c0 .574-.475 1.05-1.05 1.05-.574 0-1.05-.476-1.05-1.05v-14c0-.14.028-.266.084-.406.112-.252.308-.462.574-.574a.99.99 0 0 1 .798 0c.127.056.238.126.337.224l4.132 4.13c.406.42.406 1.092 0 1.498Z"
-                                            />
-                                        </svg>
-                                    </button>
-                                </div>
+                                {/* Swap Button */}
+                                <button onClick={handleSwapTokens} className="cursor-pointer lg:m-[0px_50px_36px_50px] m-[30px_0px_30px_0px]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="29" fill="none" viewBox="0 0 28 29">
+                                        <path
+                                            fill="#fff"
+                                            d="M19.876.5H8.138C3.04.5 0 3.538 0 8.634v11.718c0 5.11 3.04 8.148 8.138 8.148h11.724C24.96 28.5 28 25.462 28 20.366V8.634C28.014 3.538 24.974.5 19.876.5m-7.284 21c0 .14-.028.266-.084.406a1.1 1.1 0 0 1-.574.574 1 1 0 0 1-.406.084 1.06 1.06 0 0 1-.743-.308l-4.132-4.13a1.056 1.056 0 0 1 0-1.484 1.057 1.057 0 0 1 1.485 0l2.34 2.338V7.5c0-.574.476-1.05 1.05-1.05s1.064.476 1.064 1.05zm8.755-9.128a1.04 1.04 0 0 1-.743.308 1.04 1.04 0 0 1-.742-.308l-2.34-2.338V21.5c0 .574-.475 1.05-1.05 1.05-.574 0-1.05-.476-1.05-1.05v-14c0-.14.028-.266.084-.406.112-.252.308-.462.574-.574a1 1 0 0 1 .798 0c.127.056.238.126.337.224l4.132 4.13c.406.42.406 1.092 0 1.498"
+                                        />
+                                    </svg>
+                                </button>
 
-                                {/* TO TOKEN SECTION */}
-                                <div className="flex-1 w-full">
-                                    <div className="bg-[#FFFFFF66] border border-solid border-[#FFFFFF1A] rounded-[12px] px-[15px] py-[18px]">
-                                        <div className="flex items-center justify-between font-normal text-sm leading-[18.86px] text-black mb-3">
-                                            <span>
-                                                Availability:{' '}
-                                                {toToken.balance.toFixed(3)}
-                                            </span>
-                                            <button
-                                                onClick={() =>
-                                                    handleMaxAmount(false)
-                                                }
-                                                className="underline hover:text-[#3DBEA3] cursor-pointer"
-                                            >
-                                                Max:{' '}
-                                                {toToken.balance.toFixed(3)}
-                                            </button>
-                                        </div>
-                                        <div className="flex items-center justify-between">
+                                {/* To Token Section */}
+                                <div className="flex-grow lg:w-[50%] w-full">
+                                    <div className="flex items-start justify-between bg-[#00000066] border border-[#FFFFFF33] rounded-xl md:p-5 p-3">
+                                        <div>
+                                            <h3 className="text-sm font-light text-[#FFFFFF] mb-4">
+                                                Availability: {toToken.balance.toFixed(3)}
+                                            </h3>
                                             <input
                                                 type="number"
                                                 value={toAmount}
-                                                onChange={(e) =>
-                                                    handleAmountChange(
-                                                        e.target.value,
-                                                        false
-                                                    )
-                                                }
-                                                placeholder="0.000"
-                                                className="text-black font-bold text-[22px] leading-[31.43px] bg-transparent border-none outline-none flex-1 mr-4"
+                                                onChange={(e) => handleAmountChange(e.target.value, false)}
+                                                className="md:text-xl text-sm font-bold text-white bg-transparent border-none outline-none"
+                                                placeholder="0.00"
                                             />
-                                            <div
-                                                className="relative min-w-[95px]"
-                                                ref={toDropdownRef}
+                                        </div>
+                                        <div>
+                                            <h3
+                                                onClick={() => handleMaxAmount(false)}
+                                                className="text-sm font-light text-[#FFFFFF] border-b border-[#FFFFFF] w-max ml-auto mb-4 cursor-pointer hover:text-[#C9FA49]"
                                             >
+                                                Max: {toToken.balance.toFixed(3)}
+                                            </h3>
+                                            <div className="relative" ref={toDropdownRef}>
                                                 <button
-                                                    onClick={() =>
-                                                        setIsToDropdownOpen(
-                                                            !isToDropdownOpen
-                                                        )
-                                                    }
-                                                    aria-expanded={
-                                                        isToDropdownOpen
-                                                    }
-                                                    aria-haspopup="listbox"
-                                                    className="token-button w-full flex items-center cursor-pointer select-none hover:bg-white hover:bg-opacity-20 rounded-lg p-1 transition-colors"
-                                                    type="button"
+                                                    className="flex items-center gap-2 cursor-pointer"
+                                                    onClick={() => setIsToDropdownOpen(!isToDropdownOpen)}
                                                 >
-                                                    <img
-                                                        className="token-img rounded-full shadow-[0px_6px_10px_0px_#00000013] size-[23px] min-w-[23px]"
-                                                        alt={toToken.name}
-                                                        src={toToken.img}
-                                                    />
-                                                    <span className="token-label text-[#000000] text-[16px] font-normal text-left flex-grow ml-3 mr-8">
-                                                        {toToken.symbol}
+                                                    <span className="flex items-center gap-2 md:text-sm text-xs uppercase font-normal text-[#FFFFFF]">
+                                                        <img src={toToken.img} className="size-[24px] rounded-full" alt="" />
+                                                        <span>{toToken.symbol}</span>
                                                     </span>
                                                     <ChevronDown
-                                                        className={`ml-auto token-arrow transition-transform ${
-                                                            isToDropdownOpen
-                                                                ? 'rotate-180'
-                                                                : ''
+                                                        className={`transition-transform text-white ${
+                                                            isToDropdownOpen ? 'rotate-180' : ''
                                                         }`}
                                                     />
                                                 </button>
                                                 {isToDropdownOpen && (
-                                                    <ul
-                                                        className="token-list absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg max-h-48 overflow-auto ring-1 ring-black ring-opacity-5 text-[13px] font-normal text-black"
-                                                        role="listbox"
-                                                        tabIndex={-1}
-                                                    >
+                                                    <ul className="absolute right-0 top-full w-full bg-[#000000] border border-[#FFFFFF1A] rounded shadow mt-1 z-10 min-w-[130px] text-xs text-[#FFFFFF]">
                                                         {tokens
-                                                            .filter(
-                                                                (token) =>
-                                                                    token.symbol !==
-                                                                    fromToken.symbol
-                                                            )
-                                                            .map((token) => (
+                                                            .filter((token) => token.symbol !== fromToken.symbol)
+                                                            .map((token, index) => (
                                                                 <li
-                                                                    key={
-                                                                        token.symbol
-                                                                    }
-                                                                    onClick={() =>
-                                                                        handleTokenSelect(
-                                                                            token,
-                                                                            false
-                                                                        )
-                                                                    }
-                                                                    className="token-item cursor-pointer select-none relative py-2 pl-3 pr-9 flex items-center hover:bg-gray-100"
-                                                                    role="option"
-                                                                    tabIndex={0}
+                                                                    key={index}
+                                                                    className="p-2 flex items-center gap-2 hover:bg-[#5f7a17] cursor-pointer"
+                                                                    onClick={() => handleTokenSelect(token, false)}
                                                                 >
-                                                                    <img
-                                                                        alt={
-                                                                            token.name
-                                                                        }
-                                                                        className="w-6 h-6 mr-2"
-                                                                        height="24"
-                                                                        src={
-                                                                            token.img
-                                                                        }
-                                                                        width="24"
-                                                                    />
-                                                                    {
-                                                                        token.symbol
-                                                                    }
+                                                                    <img src={token.img} className="size-[24px] rounded-full" alt="" />
+                                                                    <span>{token.symbol}</span>
                                                                 </li>
                                                             ))}
                                                     </ul>
@@ -457,134 +320,206 @@ const Limit = () => {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="mt-4 flex gap-3 percentage-redio-buttons">
-                                        {['25', '50', '75', '100'].map(
-                                            (percentage) => (
-                                                <div
-                                                    key={percentage}
-                                                    className="flex-1"
+                                    {/* Percentage Buttons */}
+                                    <div className="grid grid-cols-4 gap-3 mt-2 w-full">
+                                        {['25', '50', '75', '100'].map((percentage) => (
+                                            <div key={percentage} className="flex-1">
+                                                <input
+                                                    id={`l${percentage}`}
+                                                    name="Rprogress"
+                                                    type="radio"
+                                                    className="sr-only peer"
+                                                    checked={toPercentage === percentage}
+                                                    onChange={() => handlePercentageSelect(percentage, false)}
+                                                />
+                                                <label
+                                                    htmlFor={`l${percentage}`}
+                                                    className="flex items-center justify-center text-center rounded-lg font-normal text-sm cursor-pointer h-[43px] border border-[#00000033] bg-[#00000066] text-white peer-checked:text-black peer-checked:bg-[#C9FA49] peer-checked:font-bold"
                                                 >
-                                                    <input
-                                                        type="radio"
-                                                        name="2st_percentage"
-                                                        id={`2st_${percentage}_percentage`}
-                                                        className="peer hidden"
-                                                        checked={
-                                                            toPercentage ===
-                                                            percentage
-                                                        }
-                                                        onChange={() =>
-                                                            handlePercentageSelect(
-                                                                percentage,
-                                                                false
-                                                            )
-                                                        }
-                                                    />
-                                                    <label
-                                                        htmlFor={`2st_${percentage}_percentage`}
-                                                        className="cursor-pointer w-full block bg-[#FFFFFF66] border border-solid border-[#FFFFFF1A] rounded-md py-[5px] md:py-[11px] text-[16px] md:text-base font-semibold text-[#80888A] md:text-[#1D3B5E] text-center hover:bg-[#3DBEA3] hover:text-white transition-colors peer-checked:bg-[#3DBEA3] peer-checked:text-white"
-                                                    >
-                                                        {percentage}%
-                                                    </label>
-                                                </div>
-                                            )
-                                        )}
+                                                    {percentage}%
+                                                </label>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
 
-                            {/* PRICE AND SLIPPAGE INFO */}
-                            <div className="mt-[36px] bg-[#FFFFFF66] border border-solid border-[#FFFFFF1A] rounded-[12px] px-[15px] py-[18px] flex items-center justify-between ">
-                                <div className="flex-1 font-normal text-sm leading-[18.86px] text-black">
-                                    <span>Price</span>
-                                    <p className="text-black font-bold text-[22px] leading-[31.43px] mt-4">
+                            {/* Price and Info Section */}
+                            <div className="grid md:grid-cols-3 grid-cols-2 gap-5 items-start bg-[#00000066] border border-[#FFFFFF33] rounded-xl md:p-[18px_28px] p-3 md:mt-9 mt-5">
+                                <div className="text-left order-1">
+                                    <h3 className="lg:text-lg text-xs font-normal text-[#FFFFFF] mb-4">Price</h3>
+                                    <h4 className="lg:text-[28px] text-sm font-bold leading-[1] text-[#FFFFFF]">
                                         {exchangeRate.toFixed(8)}
-                                    </p>
+                                    </h4>
                                 </div>
-                                <div className="flex-1 font-normal text-sm leading-[18.86px] text-black text-center">
-                                    <span>
-                                        Expiration Date:{' '}
-                                        {new Date(
-                                            Date.now() + 24 * 60 * 60 * 1000
-                                        ).toLocaleDateString()}
-                                    </span>
-                                    <p className="text-black font-bold text-[22px] leading-[31.43px] mt-4">
+                                <div className="text-center md:order-2 order-0 md:col-span-1 col-span-2">
+                                    <h3 className="lg:text-lg text-xs font-normal text-[#FFFFFF] mb-4">
+                                        Expiration Date: {new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString()}
+                                    </h3>
+                                    <h4 className="lg:text-[28px] text-sm font-bold leading-[1] text-[#FFFFFF]">
                                         {fromToken.symbol} - {toToken.symbol}
-                                    </p>
+                                    </h4>
                                 </div>
-                                <div className="flex-1">
-                                    <span className="flex items-center gap-2 justify-end">
-                                        Slippage Tolerance
-                                        <CircleQuestionMarkIcon />
-                                    </span>
-                                    <div className="flex items-center justify-end mt-4">
+                                <div className="text-right order-3">
+                                    <div className="flex items-center justify-end gap-2 mb-4">
+                                        <h3 className="lg:text-lg text-xs font-normal text-[#FFFFFF]">Slippage Tolerance</h3>
+                                        <svg className="min-w-[17px]" width="17" height="17" viewBox="0 0 17 17" fill="none">
+                                            <circle cx="8.25" cy="8.25" r="7.5" stroke="white" strokeWidth="1.5" />
+                                            <path
+                                                d="M6.84375 5.90625C6.84375 5.1296 7.47335 4.5 8.25 4.5C9.02665 4.5 9.65625 5.1296 9.65625 5.90625C9.65625 6.42183 9.37878 6.87261 8.96502 7.11741C8.60853 7.32832 8.25 7.64829 8.25 8.0625V9"
+                                                stroke="white"
+                                                strokeWidth="1.5"
+                                                strokeLinecap="round"
+                                            />
+                                            <circle cx="8.25" cy="11.25" r="0.75" fill="white" />
+                                        </svg>
+                                    </div>
+                                    <div className="flex items-center justify-end">
                                         <input
                                             type="number"
                                             value={slippageTolerance}
-                                            onChange={(e) =>
-                                                setSlippageTolerance(
-                                                    parseFloat(
-                                                        e.target.value
-                                                    ) || 1
-                                                )
-                                            }
-                                            className="font-bold text-[22px] leading-[31.43px] text-[#3DBEA3] bg-transparent border-none outline-none w-12 text-right"
+                                            onChange={(e) => setSlippageTolerance(parseFloat(e.target.value) || 1)}
+                                            className="lg:text-[28px] text-sm font-bold leading-[1] text-[#C9FA49] bg-transparent border-none outline-none w-12 text-right"
                                             min="0.1"
                                             max="50"
                                             step="0.1"
                                         />
-                                        <span className="font-bold text-[22px] leading-[31.43px] text-[#3DBEA3]">
-                                            %
-                                        </span>
+                                        <span className="lg:text-[28px] text-sm font-bold leading-[1] text-[#C9FA49]">%</span>
                                     </div>
                                 </div>
                             </div>
-
-                            <button className="flex-1 mt-[25px] md:[51px] rounded-[12px] bg-[#3DBEA3] w-full p-[16px_72px] text-center text-white text-base font-normal transition-all duration-200 cursor-pointer">
-                                Exchange
-                            </button>
                         </div>
                     </div>
                 </div>
-            </div>
-            <section className="md:py-[90px] py-[40px] px-4">
-                <h2 className="font-medium lg:text-[64px] sm:text-[48px] text-[32px] md:leading-[70.4px] leading-[50px] text-center text-[#3DBEA3] max-w-[514px] mx-auto">
-                    How
-                    <span className="text-[#2A8576]">Pool </span>Exchange Works
-                </h2>
-                <p className="font-normal md:text-base text-xs md:leading-[25px] text-center text-[#767676] max-w-[910px] mx-auto pt-[30px]">
-                    Ol regnbågsbarn sedan trigraf. Sus bloggosfär. Flexitarian
-                    hemin i ben. Disamma. Sat diaren, i idyse. Pånen tiktigt.
-                    Ningar polyna. Premussa. Tetrabelt dispere. Epinera.
-                    Terranomi fabelt. Dore ser. Ponde nyn. Viter luvis utom
-                    dide. Pansexuell låtir om än bobesm. Metrogram vekåvis.
-                    Tjejsamla preligt i polig. Niseligen primatyp bibel. Prertad
-                    lese. Mytogen bipod trevigon. Rorat filototal. Nepämohet
-                    mongen. Rende okålig oaktat paraktiga. Kravallturism pahet.
-                    Tick tral. Ananigt lask. Non. Otrohetskontroll egode. Vass
-                    stenossade dekapött. Hint krislåda. Kvasise R-tal mivis.
-                    Timent bonus malus, kalsongbadare. Plare. Klimatflykting
-                    ohidengen. Robotjournalistik pernetik. Spere magisk lang.
-                    Tell movis. Rögt lönöligen. Homor åtöligt, töposm. Prede
-                    ament. SafarihtmlForskning tetrasasade förutom gågging.
-                    Reaska multiren dial. Pren previs. Geosa progipäligt. Jypäng
-                    snippa. Askbränd pådytining raligt. Platreck kollektomat i
-                    mill. Pladade kynde. Andronomi. Progiras våsm fast intrase.
-                    Semiren peteteles, homodent. Incel kaktig. Yck eska plus
-                    pneumalog. Homon ol megan.
-                </p>
-                <div className="flex justify-center gap-3 md:mt-[60px] mt-[40px] items-center">
-                    <WalletButton />
-                    <a
-                        href="#"
-                        className="border-2 border-[#E9E9E9] md:px-[32px] px-[20px] py-[16px] rounded-[80px] font-medium text-base text-[#000000]"
-                    >
-                        Learn More
-                    </a>
+            </section>
+
+            {/* Chart and Orders Section */}
+            <section className="mt-[57px]">
+                <div className="w-full max-w-[1250px] mx-auto px-4">
+                    <div className="flex lg:flex-row flex-col gap-3">
+                        {/* Trading Chart */}
+                        <div className="flex-grow relative md:rounded-[40px] rounded-[20px] p-[2px] bg-[radial-gradient(98%_49.86%_at_100.03%_100%,#75912B_0%,rgba(117,145,43,0.05)_100%),radial-gradient(24.21%_39.21%_at_0%_0%,rgba(255,255,255,0.81)_0%,rgba(255,255,255,0.19)_100%),radial-gradient(21.19%_40.1%_at_100.03%_0%,rgba(0,0,0,0.5)_0%,rgba(0,0,0,0)_100%)]">
+                            <div className="md:rounded-[40px] rounded-[20px] bg-[linear-gradient(0deg,rgba(0,0,0,1)_10%,rgba(0,0,0,0.50)_100%)] backdrop-blur-sm h-full overflow-hidden lg:pt-0 md:pt-[55%] pt-[70%]">
+                                <TradingDashboard />
+                            </div>
+                        </div>
+
+                        {/* Orders Panel */}
+                        <div className="lg:min-w-[472px] lg:max-w-[472px] max-w-full relative md:rounded-[40px] rounded-[20px] p-[2px] bg-[radial-gradient(98%_49.86%_at_100.03%_100%,#75912B_0%,rgba(117,145,43,0.05)_100%),radial-gradient(24.21%_39.21%_at_0%_0%,rgba(255,255,255,0.81)_0%,rgba(255,255,255,0.19)_100%),radial-gradient(21.19%_40.1%_at_100.03%_0%,rgba(0,0,0,0.5)_0%,rgba(0,0,0,0)_100%)]">
+                            <div className="md:rounded-[40px] rounded-[20px] bg-[linear-gradient(0deg,rgba(0,0,0,1)_10%,rgba(0,0,0,0.50)_100%)] backdrop-blur-sm lg:p-[40px] sm:p-[30px] p-[15px]">
+                                <div className="w-full">
+                                    {/* Tab Buttons */}
+                                    <div className="grid grid-cols-2 gap-2 bg-[#00000066] p-[6px_8px] rounded-xl border border-[#FFFFFF33] w-[293px]">
+                                        <button
+                                            onClick={() => setActiveTab('open')}
+                                            className={`cursor-pointer flex-1 h-[45px] rounded-lg text-sm ${
+                                                activeTab === 'open'
+                                                    ? 'font-semibold bg-[#C9FA49] text-[#000000]'
+                                                    : 'font-normal text-[#FFFFFF]'
+                                            }`}
+                                        >
+                                            Open Orders
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab('history')}
+                                            className={`cursor-pointer flex-1 h-[45px] rounded-lg text-sm ${
+                                                activeTab === 'history'
+                                                    ? 'font-semibold bg-[#C9FA49] text-[#000000]'
+                                                    : 'font-normal text-[#FFFFFF]'
+                                            }`}
+                                        >
+                                            Orders History
+                                        </button>
+                                    </div>
+
+                                    {/* Tab Content */}
+                                    <div className="mt-6 bg-[#00000066] border border-[#FFFFFF33] rounded-xl p-4 h-[344px] flex flex-col items-center justify-center">
+                                        <svg
+                                            className="mx-auto mb-8"
+                                            width="57"
+                                            height="57"
+                                            viewBox="0 0 57 57"
+                                            fill="none"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                        >
+                                            <path d="M1.75 1.75H55.0833" stroke="#C9FA49" strokeWidth="3.5" strokeLinecap="round" />
+                                            <path
+                                                d="M20.417 24.4167L23.8647 20.969C24.7536 20.0801 25.198 19.6357 25.7503 19.6357C26.3026 19.6357 26.7471 20.0801 27.6359 20.969L29.198 22.5311C30.0869 23.42 30.5314 23.8644 31.0837 23.8644C31.6359 23.8644 32.0804 23.42 32.9693 22.5311L36.417 19.0834"
+                                                stroke="#C9FA49"
+                                                strokeWidth="3.5"
+                                                strokeLinecap="round"
+                                            />
+                                            <path
+                                                d="M28.417 52.4167L28.417 41.7501"
+                                                stroke="#C9FA49"
+                                                strokeWidth="3.5"
+                                                strokeLinecap="round"
+                                            />
+                                            <path
+                                                d="M23.084 55.0834L28.4173 52.4167"
+                                                stroke="#C9FA49"
+                                                strokeWidth="3.5"
+                                                strokeLinecap="round"
+                                            />
+                                            <path
+                                                d="M33.7503 55.0834L28.417 52.4167"
+                                                stroke="#C9FA49"
+                                                strokeWidth="3.5"
+                                                strokeLinecap="round"
+                                            />
+                                            <path
+                                                d="M49.7507 1.75V24.4167C49.7507 32.5877 49.7507 36.6732 47.0728 39.2116C44.3949 41.75 40.0849 41.75 31.4649 41.75H25.3697C16.7497 41.75 12.4397 41.75 9.76187 39.2116C7.08398 36.6732 7.08398 32.5877 7.08398 24.4167V1.75"
+                                                stroke="#C9FA49"
+                                                strokeWidth="3.5"
+                                            />
+                                        </svg>
+                                        <p className="text-[#FFFFFF] font-semibold text-xl">
+                                            {activeTab === 'open' ? 'No Open Orders Yet' : 'No Order History Yet'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
-            <AskExpertsSection />
-            <EarnPassiveIncomeSection />
+
+            {/* How Limit Order Works */}
+            <section className="lg:p-[200px_0_100px_0] p-[50px_0_50px_0] relative">
+                <span className="absolute top-1/2 -translate-y-1/2 left-0 w-full h-[500px] bg-[linear-gradient(180deg,rgba(0,0,0,0)_13.46%,rgba(201,250,73,0.3)_54.81%,rgba(0,0,0,0)_100%)]"></span>
+                <div className="w-full max-w-[910px] mx-auto px-4 relative z-[1] text-center space-y-3">
+                    <h2 className="md:text-[60px] text-4xl font-semibold md:leading-[70px] bg-[linear-gradient(180deg,#F1F1EF_0%,rgba(241,241,239,0.3)_100%)] bg-clip-text text-transparent mb-7">
+                        How Limit Order <br /> Exchange Works
+                    </h2>
+                    <p className="md:text-lg sm:text-base text-sm font-normal text-white">
+                        On DEX.earth, Limit Orders are powered by smart contracts on the NCOG Earth Chain, delivering true decentralized order execution without intermediaries. Placing a limit order means specifying the desired buy or sell price for a trading pair. The order is securely stored on-chain and automatically triggered when the market price reaches your target.
+                    </p>
+                    <p className="md:text-lg sm:text-base text-sm font-normal text-white">
+                        This on-chain mechanism results in transparent and predictable execution. You retain full custody of your assets until the trade occurs, without centralized holding or third-party risk. The entire process is optimized for speed and precision, combining the flexibility of a professional trading platform with the safety of DeFi.
+                    </p>
+                    <p className="md:text-lg sm:text-base text-sm font-normal text-white">
+                        Overall, DEX Limit Orders empower you to plan trades with confidence, minimal slippage, and total price autonomy. This is how it redefines secure crypto trading in a decentralized world.
+                    </p>
+
+                    <div className="flex items-center justify-center gap-3 md:mt-16 mt-8">
+                        <Link
+                            to="/swap"
+                            className="text-[#000000] bg-[#C9FA49] md:text-base text-sm leading-[1] font-normal md:p-[20px_40px] p-[15px_30px] rounded-[40px] border border-transparent transition-all duration-300 hover:border-[#C9FA49] hover:bg-transparent hover:text-white"
+                        >
+                            Connect Wallet
+                        </Link>
+                        <Link
+                            to="/swap"
+                            className="text-[#C9FA49] bg-[#000000] md:text-base text-sm leading-[1] font-normal xl:p-[20px_40px] p-[15px_25px] rounded-[40px] border border-[#C9FA49] transition-all duration-300 hover:bg-[#C9FA49] hover:text-[#000000] text-center"
+                        >
+                            Get Started
+                        </Link>
+                    </div>
+                </div>
+            </section>
+
+            {/* Choose DEX for Smarter Exchanges */}
+            <ChooseDEXSection />
         </div>
     )
 }

@@ -1,4 +1,4 @@
-import { ChevronDown, CircleQuestionMarkIcon } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import TradingDashboard from './TradingDashboard'
@@ -21,10 +21,7 @@ const Converter = () => {
         swapExactInputSingle,
         getTokenBalance,
     } = useSwap()
-    console.log("Connection Status:", {
-        account,
 
-    });
     const [tokens, setTokens] = useState<Token[]>([
         { symbol: 'USDT', name: 'Tether', img: '/images/stock-3.png', color: '#00B67A', balance: 0, realBalance: '0' },
         { symbol: 'USDC', name: 'USD Coin', img: '/images/stock-5.png', color: '#2775CA', balance: 0, realBalance: '0' },
@@ -38,7 +35,6 @@ const Converter = () => {
     const [exchangeRate, setExchangeRate] = useState(0)
     const [isSwapping, setIsSwapping] = useState(false)
     const [isLoadingQuote, setIsLoadingQuote] = useState(false)
-    const [lastQuoteTime, setLastQuoteTime] = useState(0)
     const [isFromDropdownOpen, setIsFromDropdownOpen] = useState(false)
     const [isToDropdownOpen, setIsToDropdownOpen] = useState(false)
 
@@ -70,7 +66,6 @@ const Converter = () => {
             setToAmount(quote.amountOut)
             const rate = parseFloat(quote.amountOut) / parseFloat(amount)
             setExchangeRate(rate)
-            setLastQuoteTime(Date.now())
         } catch (e: any) {
             console.error('Quote error:', e)
             setToAmount('0')
@@ -111,6 +106,28 @@ const Converter = () => {
         }
     }
 
+    // Handle token swap
+    const handleTokenSwap = (): void => {
+        const tempToken = fromToken
+        setFromToken(toToken)
+        setToToken(tempToken)
+        const tempAmount = fromAmount
+        setFromAmount(toAmount)
+        setToAmount(tempAmount)
+    }
+
+    // Handle percentage selection
+    const handlePercentageSelect = (percentage: number, isFrom: boolean = true): void => {
+        const token = isFrom ? fromToken : toToken
+        const amount = (token.balance * (percentage / 100)).toFixed(6)
+
+        if (isFrom) {
+            setFromAmount(amount)
+        } else {
+            setToAmount(amount)
+        }
+    }
+
     // Effects
     useEffect(() => { if (account) updateBalances() }, [account])
     useEffect(() => { if (fromAmount && fromToken.symbol !== toToken.symbol) fetchQuote(fromAmount) }, [fromAmount, fromToken, toToken])
@@ -127,134 +144,199 @@ const Converter = () => {
     }, [])
 
     return (
-        <div className="mt-[150px] mb-[150px] w-full p-[3.5px] md:rounded-[40px] rounded-[20px]">
-            <TradingDashboard />
-            <div className="hero-border bg-[linear-gradient(105.87deg,_rgba(0,0,0,0.2)_3.04%,_rgba(0,0,0,0)_96.05%)] relative backdrop-blur-[80px] w-full md:rounded-[40px] rounded-[20px] px-[15px] md:px-[50px] py-[20px] md:py-[60px]">
-                {/* Top tabs */}
-                <div className="relative z-10 border bg-[#FFFFFF66] inline-flex px-2 py-1.5 rounded-[14px] border-solid border-[#FFFFFF1A] mb-6 gap-2">
-                    <Link to="/swap" className="rounded-[8px] bg-white text-[#2A8576] font-bold text-sm leading-[100%] px-[22px] py-[13px] cursor-pointer">Exchange</Link>
-                    <Link to="/pool" className="rounded-[8px] text-black font-normal text-sm leading-[100%] px-[22px] py-[13px] cursor-pointer">Pool</Link>
+        <div className="w-full">
+            {/* Chart Section */}
+            <div className="w-full mb-8">
+                <div className="relative w-full h-[600px] md:rounded-[40px] rounded-[20px] overflow-hidden bg-[#00000066] border border-[#FFFFFF1A]">
+                    <TradingDashboard />
                 </div>
+            </div>
 
-                {!account && <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-lg text-yellow-800">Connect your wallet to start trading</div>}
+            {/* Converter Section */}
+            <div className="w-full relative md:rounded-[40px] rounded-[20px] p-[2px] bg-[radial-gradient(98%_49.86%_at_100.03%_100%,#75912B_0%,rgba(117,145,43,0.05)_100%),radial-gradient(24.21%_39.21%_at_0%_0%,rgba(255,255,255,0.81)_0%,rgba(255,255,255,0.19)_100%),radial-gradient(21.19%_40.1%_at_100.03%_0%,rgba(0,0,0,0.5)_0%,rgba(0,0,0,0)_100%)]">
+                <div className="md:rounded-[40px] rounded-[20px] bg-[linear-gradient(0deg,rgba(0,0,0,1)_10%,rgba(0,0,0,0.50)_100%)] backdrop-blur-sm lg:p-[40px] sm:p-[30px] p-[15px]">
+                    {/* Exchange/Pool Tabs */}
+                    <div className="grid grid-cols-2 gap-2 bg-[#00000066] p-[6px_8px] rounded-xl border border-[#FFFFFF33] w-[230px] mb-8">
+                        <button className="cursor-pointer flex-1 h-[45px] rounded-lg font-semibold text-sm text-[#000000] bg-[#C9FA49]">
+                            Exchange
+                        </button>
+                        <Link
+                            to="/pool"
+                            className="cursor-pointer flex items-center justify-center h-[45px] rounded-lg font-normal text-sm text-[#FFFFFF]"
+                        >
+                            Pool
+                        </Link>
+                    </div>
 
-                {/* Swap UI */}
-                <div className="flex flex-col md:flex-row items-center gap-[25px] md:gap-[51px]">
-                    {/* From */}
-                    <div className="flex-1 w-full">
-                        <div className="bg-[#FFFFFF66] border border-solid border-[#FFFFFF1A] rounded-[12px] px-[15px] py-[18px] flex justify-between items-center">
-                            <input type="number" value={fromAmount} onChange={e => setFromAmount(e.target.value)} placeholder="0.000" className="text-black font-bold text-[22px] bg-transparent border-none outline-none flex-1 mr-4" />
-                            <div ref={fromDropdownRef} className="relative min-w-[95px]">
-                                <button onClick={() => setIsFromDropdownOpen(o => !o)} className="token-button w-full flex items-center cursor-pointer hover:bg-white hover:bg-opacity-20 rounded-lg p-1">
-                                    <img src={fromToken.img} alt={fromToken.name} className="rounded-full size-[23px]" />
-                                    <span className="ml-3 mr-8">{fromToken.symbol}</span>
-                                    <ChevronDown className={`transition-transform ${isFromDropdownOpen ? 'rotate-180' : ''}`} />
-                                </button>
-                                {isFromDropdownOpen && (
-                                    <ul className="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg max-h-48 overflow-auto text-black">
-                                        {tokens.filter(t => t.symbol !== toToken.symbol).map(token => (
-                                            <li key={token.symbol} onClick={() => { setFromToken(token); setIsFromDropdownOpen(false) }} className="cursor-pointer py-2 pl-3 pr-9 flex items-center hover:bg-gray-100">
-                                                <img src={token.img} alt={token.name} className="w-6 h-6 mr-2" />
-                                                <div>
-                                                    <div>{token.symbol}</div>
-                                                    <div className="text-xs text-gray-500">{token.balance.toFixed(4)}</div>
-                                                </div>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
+                    {/* Swap Form */}
+                    <div className="grid lg:grid-cols-2 grid-cols-1 gap-6">
+                        {/* From Token */}
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-[#FFFFFF] font-semibold text-lg">From</h3>
+                                <span className="text-[#FFFFFF99] text-sm">Balance: {fromToken.balance.toFixed(4)}</span>
+                            </div>
+
+                            <div className="bg-[#00000066] border border-[#FFFFFF1A] rounded-xl p-4">
+                                <div className="flex items-center justify-between mb-4">
+                                    <input
+                                        type="number"
+                                        value={fromAmount}
+                                        onChange={e => setFromAmount(e.target.value)}
+                                        placeholder="0.00"
+                                        className="bg-transparent text-[#FFFFFF] text-2xl font-bold outline-none w-full"
+                                    />
+                                    <div ref={fromDropdownRef} className="relative">
+                                        <button
+                                            onClick={() => setIsFromDropdownOpen(!isFromDropdownOpen)}
+                                            className="flex items-center gap-2 bg-[#FFFFFF1A] hover:bg-[#FFFFFF33] transition-colors px-4 py-2 rounded-lg"
+                                        >
+                                            <img src={fromToken.img} alt={fromToken.name} className="w-6 h-6 rounded-full" />
+                                            <span className="text-[#FFFFFF] font-semibold">{fromToken.symbol}</span>
+                                            <ChevronDown className={`text-[#FFFFFF] transition-transform ${isFromDropdownOpen ? 'rotate-180' : ''}`} size={16} />
+                                        </button>
+                                        {isFromDropdownOpen && (
+                                            <ul className="absolute right-0 top-full mt-2 w-full bg-[#000000] border border-[#FFFFFF1A] rounded-lg shadow-lg z-10 min-w-[200px]">
+                                                {tokens.filter(t => t.symbol !== toToken.symbol).map(token => (
+                                                    <li
+                                                        key={token.symbol}
+                                                        onClick={() => { setFromToken(token); setIsFromDropdownOpen(false) }}
+                                                        className="p-3 hover:bg-[#FFFFFF1A] cursor-pointer flex items-center gap-2 text-[#FFFFFF]"
+                                                    >
+                                                        <img src={token.img} alt={token.name} className="w-6 h-6 rounded-full" />
+                                                        <div>
+                                                            <div className="font-semibold">{token.symbol}</div>
+                                                            <div className="text-xs text-[#FFFFFF99]">{token.name}</div>
+                                                        </div>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-2">
+                                    {[25, 50, 75, 100].map(pct => (
+                                        <button
+                                            key={pct}
+                                            onClick={() => handlePercentageSelect(pct, true)}
+                                            className="flex-1 bg-[#FFFFFF1A] hover:bg-[#C9FA49] hover:text-[#000000] text-[#FFFFFF] py-2 rounded-lg text-sm font-semibold transition-colors"
+                                        >
+                                            {pct === 100 ? 'MAX' : `${pct}%`}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                        <div className="mt-4 flex gap-3 percentage-redio-buttons">                            {[25, 50, 75, 100].map(pct => (
-                            <button
-                                key={pct}
-                                onClick={() => {
-                                    const bal = parseFloat(fromToken.realBalance || '0');
-                                    const calcAmt = ((bal * pct) / 100).toFixed(6);
-                                    setFromAmount(calcAmt);
-                                }}
-                                className="cursor-pointer w-full block bg-[#FFFFFF66] border border-solid border-[#FFFFFF1A] rounded-md py-[5px] md:py-[11px] text-[16px] md:text-base font-semibold text-[#80888A] md:text-[#1D3B5E] text-center hover:bg-[#3DBEA3] hover:text-white transition-colors peer-checked:bg-[#3DBEA3] peer-checked:text-white"                            >
-                                {pct === 100 ? 'MAX' : `${pct}%`}
-                            </button>
-                        ))}
+
+                        {/* To Token */}
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-[#FFFFFF] font-semibold text-lg">To</h3>
+                                <span className="text-[#FFFFFF99] text-sm">Balance: {toToken.balance.toFixed(4)}</span>
+                            </div>
+
+                            <div className="bg-[#00000066] border border-[#FFFFFF1A] rounded-xl p-4">
+                                <div className="flex items-center justify-between mb-4">
+                                    <input
+                                        type="number"
+                                        value={toAmount}
+                                        readOnly
+                                        placeholder="0.00"
+                                        className="bg-transparent text-[#FFFFFF] text-2xl font-bold outline-none w-full"
+                                    />
+                                    <div ref={toDropdownRef} className="relative">
+                                        <button
+                                            onClick={() => setIsToDropdownOpen(!isToDropdownOpen)}
+                                            className="flex items-center gap-2 bg-[#FFFFFF1A] hover:bg-[#FFFFFF33] transition-colors px-4 py-2 rounded-lg"
+                                        >
+                                            <img src={toToken.img} alt={toToken.name} className="w-6 h-6 rounded-full" />
+                                            <span className="text-[#FFFFFF] font-semibold">{toToken.symbol}</span>
+                                            <ChevronDown className={`text-[#FFFFFF] transition-transform ${isToDropdownOpen ? 'rotate-180' : ''}`} size={16} />
+                                        </button>
+                                        {isToDropdownOpen && (
+                                            <ul className="absolute right-0 top-full mt-2 w-full bg-[#000000] border border-[#FFFFFF1A] rounded-lg shadow-lg z-10 min-w-[200px]">
+                                                {tokens.filter(t => t.symbol !== fromToken.symbol).map(token => (
+                                                    <li
+                                                        key={token.symbol}
+                                                        onClick={() => { setToToken(token); setIsToDropdownOpen(false) }}
+                                                        className="p-3 hover:bg-[#FFFFFF1A] cursor-pointer flex items-center gap-2 text-[#FFFFFF]"
+                                                    >
+                                                        <img src={token.img} alt={token.name} className="w-6 h-6 rounded-full" />
+                                                        <div>
+                                                            <div className="font-semibold">{token.symbol}</div>
+                                                            <div className="text-xs text-[#FFFFFF99]">{token.name}</div>
+                                                        </div>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-2">
+                                    {[25, 50, 75, 100].map(pct => (
+                                        <button
+                                            key={pct}
+                                            onClick={() => handlePercentageSelect(pct, false)}
+                                            className="flex-1 bg-[#FFFFFF1A] hover:bg-[#C9FA49] hover:text-[#000000] text-[#FFFFFF] py-2 rounded-lg text-sm font-semibold transition-colors"
+                                        >
+                                            {pct === 100 ? 'MAX' : `${pct}%`}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Swap arrows */}
-                    <div>
-                        <button onClick={() => { const t = fromToken; setFromToken(toToken); setToToken(t); const a = fromAmount; setFromAmount(toAmount); setToAmount(a) }} className="hover:bg-gray-100 p-2 rounded-full">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="29" fill="none"><path fill="#000" d="M19.876.5H8.138C3.04.5 0 3.538 0 8.634v11.718c0 5.11 3.04 8.148 8.138 8.148h11.724C24.96 28.5 28 25.462 28 20.366V8.634C28.014 3.538 24.974.5 19.876.5Zm-7.284 21c0 .14-.028.266-.084.406a1.095 1.095 0 0 1-.574.574 1.005 1.005 0 0 1-.406.084 1.056 1.056 0 0 1-.743-.308l-4.132-4.13a1.056 1.056 0 0 1 0-1.484 1.057 1.057 0 0 1 1.485 0l2.34 2.338V7.5c0-.574.476-1.05 1.05-1.05.574 0 1.064.476 1.064 1.05v14Zm8.755-9.128a1.04 1.04 0 0 1-.743.308 1.04 1.04 0 0 1-.742-.308l-2.34-2.338V21.5c0 .574-.475 1.05-1.05 1.05-.574 0-1.05-.476-1.05-1.05v-14c0-.14.028-.266.084-.406.112-.252.308-.462.574-.574a.99.99 0 0 1 .798 0c.127.056.238.126.337.224l4.132 4.13c.406.42.406 1.092 0 1.498Z" /></svg>
+                    {/* Swap Button Center */}
+                    <div className="flex justify-center my-6">
+                        <button
+                            onClick={handleTokenSwap}
+                            className="bg-[#FFFFFF1A] hover:bg-[#FFFFFF33] p-3 rounded-full transition-colors"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C9FA49" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M7 16V4M7 4L3 8M7 4l4 4"></path>
+                                <path d="M17 8v12m0 0l4-4m-4 4l-4-4"></path>
+                            </svg>
                         </button>
                     </div>
 
-                    {/* To */}
-                    <div className="flex-1 w-full">
-                        <div className="bg-[#FFFFFF66] border border-solid border-[#FFFFFF1A] rounded-[12px] px-[15px] py-[18px] flex justify-between items-center">
-                            <input type="number" value={toAmount} readOnly placeholder="0.000" className="text-black font-bold text-[22px] bg-transparent border-none outline-none flex-1 mr-4" />
-                            <div ref={toDropdownRef} className="relative min-w-[95px]">
-                                <button onClick={() => setIsToDropdownOpen(o => !o)} className="token-button w-full flex items-center cursor-pointer hover:bg-white hover:bg-opacity-20 rounded-lg p-1">
-                                    <img src={toToken.img} alt={toToken.name} className="rounded-full size-[23px]" />
-                                    <span className="ml-3 mr-8">{toToken.symbol}</span>
-                                    <ChevronDown className={`transition-transform ${isToDropdownOpen ? 'rotate-180' : ''}`} />
-                                </button>
-                                {isToDropdownOpen && (
-                                    <ul className="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg max-h-48 overflow-auto text-black">
-                                        {tokens.filter(t => t.symbol !== fromToken.symbol).map(token => (
-                                            <li key={token.symbol} onClick={() => { setToToken(token); setIsToDropdownOpen(false) }} className="cursor-pointer py-2 pl-3 pr-9 flex items-center hover:bg-gray-100">
-                                                <img src={token.img} alt={token.name} className="w-6 h-6 mr-2" />
-                                                <div>
-                                                    <div>{token.symbol}</div>
-                                                    <div className="text-xs text-gray-500">{token.balance.toFixed(4)}</div>
-                                                </div>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
+                    {/* Exchange Info */}
+                    <div className="grid md:grid-cols-2 grid-cols-1 gap-4 mb-6">
+                        <div className="bg-[#00000066] border border-[#FFFFFF1A] rounded-xl p-4">
+                            <p className="text-[#FFFFFF99] text-sm mb-1">Exchange Rate</p>
+                            <p className="text-[#C9FA49] font-semibold text-lg">
+                                {exchangeRate > 0 ? `1 ${fromToken.symbol} = ${exchangeRate.toFixed(8)} ${toToken.symbol}` : '--'}
+                            </p>
+                        </div>
+                        <div className="bg-[#00000066] border border-[#FFFFFF1A] rounded-xl p-4">
+                            <p className="text-[#FFFFFF99] text-sm mb-1">Slippage Tolerance</p>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="number"
+                                    value={slippageTolerance}
+                                    onChange={e => setSlippageTolerance(parseFloat(e.target.value) || 1)}
+                                    className="bg-[#FFFFFF1A] text-[#C9FA49] font-semibold text-lg px-3 py-1 rounded-lg outline-none w-20"
+                                />
+                                <span className="text-[#FFFFFF] font-semibold">%</span>
                             </div>
                         </div>
-                        <div className="mt-4 flex gap-3 percentage-redio-buttons">                            {[25, 50, 75, 100].map(pct => (
-                            <button
-                                key={pct}
-                                onClick={() => {
-                                    const bal = parseFloat(toToken.realBalance || '0');
-                                    const calcAmt = ((bal * pct) / 100).toFixed(6);
-                                    setToAmount(calcAmt);
-                                }}
-                                className="cursor-pointer w-full block bg-[#FFFFFF66] border border-solid border-[#FFFFFF1A] rounded-md py-[5px] md:py-[11px] text-[16px] md:text-base font-semibold text-[#80888A] md:text-[#1D3B5E] text-center hover:bg-[#3DBEA3] hover:text-white transition-colors peer-checked:bg-[#3DBEA3] peer-checked:text-white"                            >
-                                {pct === 100 ? 'MAX' : `${pct}%`}
-                            </button>
-                        ))}
-                        </div>
                     </div>
 
+                    {/* Swap Action Button */}
+                    <button
+                        onClick={handleSwap}
+                        disabled={isSwapping || isLoadingQuote || !fromAmount || parseFloat(fromAmount) <= 0}
+                        className={`w-full py-4 rounded-[40px] font-semibold text-base transition-all duration-300 ${
+                            isSwapping || isLoadingQuote || !fromAmount || parseFloat(fromAmount) <= 0
+                                ? 'bg-[#FFFFFF33] text-[#FFFFFF66] cursor-not-allowed'
+                                : 'bg-[#C9FA49] text-[#000000] hover:bg-[#b8e842]'
+                        }`}
+                    >
+                        {isSwapping ? 'Swapping...' : !account ? 'Connect Wallet' : isLoadingQuote ? 'Getting Quote...' : 'Exchange'}
+                    </button>
                 </div>
-
-                {/* Info */}
-                <div className="mt-[36px] bg-[#FFFFFF66] border border-solid border-[#FFFFFF1A] rounded-[12px] px-[15px] py-[18px] flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="flex-1 text-center md:text-left">
-                        <span>Exchange Rate</span>
-                        <p className="text-black font-bold text-[22px] mt-2">{exchangeRate > 0 ? `1 ${fromToken.symbol} = ${exchangeRate.toFixed(8)} ${toToken.symbol}` : '--'}</p>
-                    </div>
-                    <div className="flex-1 text-center">
-                        <span>Quote Valid Until: {lastQuoteTime ? new Date(lastQuoteTime + 30000).toLocaleTimeString() : '--'}</span>
-                        <p className="text-black font-bold text-[22px] mt-2">{fromToken.symbol} → {toToken.symbol}</p>
-                    </div>
-                    <div className="flex-1 text-center md:text-right">
-                        <span className="flex items-center justify-center md:justify-end gap-2">Slippage Tolerance <CircleQuestionMarkIcon size={16} /></span>
-                        <div className="flex items-center justify-center md:justify-end mt-2">
-                            <input type="number" value={slippageTolerance} onChange={e => setSlippageTolerance(parseFloat(e.target.value) || 1)} className="font-bold text-[22px] text-[#3DBEA3] bg-transparent border-none outline-none w-12 text-right" />%
-                        </div>
-                    </div>
-                </div>
-
-                {/* Swap button */}
-                <button
-                    onClick={handleSwap}
-                    disabled={isSwapping || isLoadingQuote || !fromAmount || parseFloat(fromAmount) <= 0}
-                    className={`mt-[25px] md:mt-[51px] rounded-[12px] w-full p-[16px] text-center text-white ${isSwapping || isLoadingQuote ? 'bg-gray-400' : 'bg-[#3DBEA3] hover:bg-[#35a593]'}`}
-                >
-                    {isSwapping ? 'Swapping...' : !account ? 'Connect Wallet' : isLoadingQuote ? 'Getting Quote...' : 'Exchange'}
-                </button>
             </div>
         </div>
     )

@@ -63,7 +63,7 @@ const LandingHeader: React.FC = () => {
     }
 
     return (
-        <header className="relative pt-5">
+        <header className="fixed top-0 left-0 right-0 z-50 bg-transparent pb-5">
             {/* Overlay for mobile */}
             <div
                 className={`w-full h-full z-10 fixed top-0 left-0 backdrop-blur-[5px] bg-black/25 transition-opacity duration-300 ${
@@ -72,7 +72,7 @@ const LandingHeader: React.FC = () => {
                 onClick={toggleNav}
             />
 
-            <div className="w-full max-w-[1400px] mx-auto px-4 relative">
+            <div className="w-full max-w-[1400px] mx-auto px-4 relative pt-5">
                 {/* Desktop Navigation */}
                 <div className="lg:relative hidden lg:block rounded-[60px] p-[1px] bg-[radial-gradient(98%_49.86%_at_100.03%_100%,#75912B_0%,rgba(117,145,43,0.05)_100%),radial-gradient(24.21%_39.21%_at_0%_0%,rgba(255,255,255,0.81)_0%,rgba(255,255,255,0.19)_100%),radial-gradient(21.19%_40.1%_at_100.03%_0%,rgba(0,0,0,0.5)_0%,rgba(0,0,0,0)_100%)]">
                     <div className="grid grid-cols-3 items-center rounded-[60px] bg-[linear-gradient(180deg,#1F2321_0%,#020B05_100%)] backdrop-blur-sm p-5">
