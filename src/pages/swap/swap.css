@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+.font-poppins {
+    font-family: "Poppins", sans-serif;
+}
+
+.tick-bar::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: url(./assets/images/chart-progress-bar.svg);
+    width: 100%;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    background: #f97316;
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(249, 115, 22, 0.6);
+}
+
+input[type="range"]::-moz-range-thumb {
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    background: #f97316;
+    cursor: pointer;
+    border: none;
+}
+
+.btn-active {
+    border-color: #f97316 !important;
+    color: #f97316 !important;
+    background-color: rgba(249, 115, 22, 0.16) !important;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    width: 3px;
+}
+
+.no-scrollbar::-webkit-scrollbar-track {
+    background: #888;
+}
+
+.no-scrollbar::-webkit-scrollbar-thumb {
+    background: #C9FA49;
+}
+
+.bar {
+    transition: width 0.9s ease;
+}
+
+/* Ensure proper height constraints */
+.swap-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.swap-main-grid {
+    flex: 1;
+    display: grid;
+    gap: 0.5rem;
+}
+
+/* Desktop specific adjustments */
+@media (min-width: 1280px) {
+    .swap-main-grid {
+        height: calc(100vh - 280px);
+        max-height: calc(100vh - 280px);
+    }
+}
+
+/* Tablet adjustments */
+@media (min-width: 768px) and (max-width: 1279px) {
+    .swap-main-grid {
+        min-height: auto;
+    }
+}
