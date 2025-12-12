@@ -23,6 +23,7 @@ const LandingHeader: React.FC = () => {
         { name: 'Pool', href: '/pool', path: '/pool' },
         { name: 'Bridge', href: '/bridge', path: '/bridge' },
         { name: 'Exchange', href: '/Exchange', path: '/Exchange' },
+        { name: 'LendingBorrowing', href: '/LendingBorrowing', path: '/LendingBorrowing' },
     ]
 
     // Close dropdown when clicking outside

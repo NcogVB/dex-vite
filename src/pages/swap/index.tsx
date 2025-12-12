@@ -14,14 +14,6 @@ const Swap = () => {
                     <p className="xl:text-lg md:text-base sm:text-sm text-xs text-[#FFFFFF] font-normal text-center w-full max-w-[690px] mx-auto md:my-[50px] my-[25px]">
                         At our cryptocurrency token exchange platform, we offer an easy-to-use token swap service that allows you to seamlessly exchange one type of token for another with maximum efficiency.
                     </p>
-                    <div className="flex items-center justify-center md:gap-[50px] gap-5">
-                        <Link
-                            to="/swap"
-                            className="text-[#000000] bg-[#C9FA49] md:text-base text-sm leading-[1] font-normal md:p-[20px_40px] p-[15px_30px] rounded-[40px] border border-transparent transition-all duration-300 hover:border-[#C9FA49] hover:bg-transparent hover:text-white"
-                        >
-                            Connect Wallet
-                        </Link>
-                    </div>
                 </div>
             </section>
 

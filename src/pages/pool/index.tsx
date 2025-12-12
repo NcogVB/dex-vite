@@ -21,14 +21,6 @@ const Pool = () => {
                     <p className="xl:text-lg md:text-base sm:text-sm text-xs text-[#FFFFFF] font-normal text-center w-full max-w-[690px] mx-auto md:my-[50px] my-[25px]">
                         The Pool on DEX.earth enables you to put digital assets to work while supporting the decentralized ecosystem. Liquidity added to DEX's high-performance pools will ensure that traders anywhere in the world can exchange tokens with ease. It's a simple, transparent, and trader-friendly way to participate in the future of decentralized finance.
                     </p>
-                    <div className="flex items-center justify-center md:gap-[50px] gap-5">
-                        <Link
-                            to="/swap"
-                            className="text-[#000000] bg-[#C9FA49] md:text-base text-sm leading-[1] font-normal md:p-[20px_40px] p-[15px_30px] rounded-[40px] border border-transparent transition-all duration-300 hover:border-[#C9FA49] hover:bg-transparent hover:text-white"
-                        >
-                            Connect Wallet
-                        </Link>
-                    </div>
                 </div>
             </section>
 

@@ -203,7 +203,6 @@ const Bridge = () => {
 
     return (
         <div>
-            {/* Hero Section */}
             <section className="md:py-[110px] py-[50px] relative overflow-hidden">
                 <div className="w-full max-w-[1250px] mx-auto px-4 relative z-[1]">
                     <h1 className="xl:text-[80px] lg:text-6xl md:text-5xl text-3xl text-center font-semibold xl:leading-[100px] bg-[linear-gradient(180deg,#F1F1EF_0%,rgba(241,241,239,0.3)_100%)] bg-clip-text text-transparent">
@@ -212,18 +211,9 @@ const Bridge = () => {
                     <p className="xl:text-lg md:text-base sm:text-sm text-xs text-[#FFFFFF] font-normal text-center w-full max-w-[690px] mx-auto md:my-[50px] my-[25px]">
                         DEX Bridge enables you to transfer crypto assets seamlessly between multiple blockchains, without the limits of isolated ecosystems. Enjoy instant, secure, and trader-friendly interoperability that lets your tokens flow freely—expanding your opportunities across DeFi without leaving the DEX.earth ecosystem.
                     </p>
-                    <div className="flex items-center justify-center md:gap-[50px] gap-5">
-                        <Link
-                            to="/swap"
-                            className="text-[#000000] bg-[#C9FA49] md:text-base text-sm leading-[1] font-normal md:p-[20px_40px] p-[15px_30px] rounded-[40px] border border-transparent transition-all duration-300 hover:border-[#C9FA49] hover:bg-transparent hover:text-white"
-                        >
-                            Connect Wallet
-                        </Link>
-                    </div>
                 </div>
             </section>
 
-            {/* Bridge Form Section */}
             <section className="relative">
                 <img
                     className="absolute bottom-[220px] left-0 w-full"
@@ -234,7 +224,6 @@ const Bridge = () => {
                     <div className="relative md:rounded-[40px] rounded-[20px] p-[2px] bg-[radial-gradient(98%_49.86%_at_100.03%_100%,#75912B_0%,rgba(117,145,43,0.05)_100%),radial-gradient(24.21%_39.21%_at_0%_0%,rgba(255,255,255,0.81)_0%,rgba(255,255,255,0.19)_100%),radial-gradient(21.19%_40.1%_at_100.03%_0%,rgba(0,0,0,0.5)_0%,rgba(0,0,0,0)_100%)]">
                         <div className="md:rounded-[40px] rounded-[20px] bg-[linear-gradient(0deg,rgba(0,0,0,1)_10%,rgba(0,0,0,0.50)_100%)] backdrop-blur-sm lg:p-[60px_50px] sm:p-[30px] p-[15px]">
                             <div className="flex lg:flex-row flex-col lg:items-end items-center">
-                                {/* From Section */}
                                 <div className="flex-grow lg:w-[50%] w-full">
                                     <div className="grid grid-cols-2 items-center gap-3 mb-2">
                                         {renderDropdown('fromToken', 'fromToken', 'Token', chainOptions)}
@@ -291,7 +280,6 @@ const Bridge = () => {
                                     </div>
                                 </div>
 
-                                {/* Swap Button */}
                                 <button onClick={handleSwap} className="cursor-pointer lg:m-[0px_50px_36px_50px] m-[30px_0px_30px_0px]">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="28" height="29" fill="none" viewBox="0 0 28 29">
                                         <path
@@ -301,7 +289,6 @@ const Bridge = () => {
                                     </svg>
                                 </button>
 
-                                {/* To Section */}
                                 <div className="flex-grow lg:w-[50%] w-full">
                                     <div className="grid grid-cols-2 items-center gap-3 mb-2">
                                         {renderDropdown('toToken', 'toToken', 'Token', chainOptions)}
@@ -359,7 +346,6 @@ const Bridge = () => {
                                 </div>
                             </div>
 
-                            {/* Price and Slippage Section */}
                             <div className="flex items-start justify-between bg-[#00000066] border border-[#FFFFFF33] rounded-xl md:p-[18px_28px] p-3 md:mt-9 mt-5">
                                 <div className="text-left">
                                     <h3 className="md:text-lg text-xs font-normal text-[#FFFFFF] mb-4">Price</h3>
@@ -400,7 +386,6 @@ const Bridge = () => {
                 </div>
             </section>
 
-            {/* How DEX Bridge Works */}
             <section className="lg:p-[200px_0_100px_0] p-[50px_0_50px_0] relative">
                 <span className="absolute top-1/2 -translate-y-1/2 left-0 w-full h-[500px] bg-[linear-gradient(180deg,rgba(0,0,0,0)_13.46%,rgba(201,250,73,0.3)_54.81%,rgba(0,0,0,0)_100%)]"></span>
                 <div className="w-full max-w-[910px] mx-auto px-4 relative z-[1] text-center space-y-3">
@@ -434,7 +419,6 @@ const Bridge = () => {
                 </div>
             </section>
 
-            {/* Choose DEX for Smarter Exchanges */}
             <ChooseDEXSection />
         </div>
     )
