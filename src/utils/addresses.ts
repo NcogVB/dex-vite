@@ -6,4 +6,6 @@ export const TOKENS: Record<string, { address: string; decimals: number }> = {
     USDT: { address: "0x71297bB76b7624598fD4C7a90d62A2BfE8166E74", decimals: 18 },
 };
 
-export const FEE_TIERS = [500, 3000, 10000]; // 0.05%, 0.3%, 1%
+// ... existing exports
+export const POSITION_MANAGER_ADDRESS = "0x61d1F08f42189257148D54550C9B089a638B59d5"; // Replace with your actual address
+export const FEE_TIERS = [3000]; // 0.05%, 0.3%, 1%

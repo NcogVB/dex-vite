@@ -1,426 +1,239 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { useLiquidity } from '../contexts/LiquidityContext'
 import { ethers } from 'ethers'
 import { Token } from '@uniswap/sdk-core'
 import { Pool, Position } from '@uniswap/v3-sdk'
-import { UNISWAP_V3_POOL_ABI } from '../contexts/ABI'
+import { useLiquidity } from '../contexts/LiquidityContext'
+import { UNISWAP_V3_POOL_ABI, POSITION_MANAGER_MINIMAL_ABI, FACTORY_ABI } from '../utils/abis'
+import { POSITION_MANAGER_ADDRESS, FACTORY_ADDRESS, TOKENS } from '../utils/addresses'
+import { Loader2 } from 'lucide-react'
 
 interface LiquidityData {
-    poolTokens: number; // Liquidity tokens (scaled)
-    usdtAmount: number; // Amount of USDT in position
-    ethAmount: number; // Amount of ETH in position
-    shareOfPool: number; // Percentage of pool owned
-    reward: number | null; // Uncollected fees (if any)
+    amount0: string;
+    amount1: string;
+    symbol0: string;
+    symbol1: string;
+    shareOfPool: string;
 }
-const POSITION_MANAGER_ADDRESS = '0x442d8CCae9d8dd3bc4B21494C0eD1ccF4d24F505';
-const POSITION_MANAGER_MINIMAL_ABI = [
-    'function positions(uint256 tokenId) view returns (uint96 nonce, address operator, address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint128 liquidity, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, uint128 tokensOwed0, uint128 tokensOwed1)',
-    'function decreaseLiquidity(tuple(uint256 tokenId, uint128 liquidity, uint256 amount0Min, uint256 amount1Min, uint256 deadline)) returns (uint256 amount0, uint256 amount1)',
-    'function collect(tuple(uint256 tokenId, address recipient, uint128 amount0Max, uint128 amount1Max)) returns (uint256 amount0, uint256 amount1)',
-];
 
 const Converter1: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'exchange' | 'pool'>('pool')
     const { removeLiquidity } = useLiquidity()
+    const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null)
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && window.ethereum) {
+            setProvider(new ethers.BrowserProvider(window.ethereum))
+        }
+    }, [])
+    
+    const [tokenId, setTokenId] = useState<string>('')
     const [percentage, setPercentage] = useState<number>(25)
-    const [tokenId, setTokenId] = useState<string>(''); // User inputs or fetches tokenId
-    const [selectedPercentage, setSelectedPercentage] = useState<
-        25 | 50 | 75 | 100
-    >(25)
-    const [isRemovingLiquidity, setIsRemovingLiquidity] = useState(false);
-    const [liquidityData, setLiquidityData] = useState<LiquidityData>({
-        poolTokens: 0,
-        usdtAmount: 0,
-        ethAmount: 0,
-        shareOfPool: 0,
-        reward: null,
-    });
-    const [isEnabled, setIsEnabled] = useState<boolean>(false)
+    const [isLoadingData, setIsLoadingData] = useState(false)
+    const [isRemoving, setIsRemoving] = useState(false)
+    const [data, setData] = useState<LiquidityData | null>(null)
 
-    const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = Number(e.target.value)
-        setPercentage(value)
-
-        // Update radio button selection based on slider
-        if (value >= 0 && value < 37.5) setSelectedPercentage(25)
-        else if (value >= 37.5 && value < 62.5) setSelectedPercentage(50)
-        else if (value >= 62.5 && value < 87.5) setSelectedPercentage(75)
-        else setSelectedPercentage(100)
-    }
-
+    // Fetch Position Data logic
     const fetchPositionData = useCallback(async () => {
-        if (!tokenId || !(window as any).ethereum) return;
-
+        if (!tokenId || !provider) return
+        
+        setIsLoadingData(true)
         try {
-            const provider = new ethers.BrowserProvider((window as any).ethereum);
+            const pm = new ethers.Contract(POSITION_MANAGER_ADDRESS, POSITION_MANAGER_MINIMAL_ABI, provider)
+            const factory = new ethers.Contract(FACTORY_ADDRESS, FACTORY_ABI, provider)
 
-            const positionManager = new ethers.Contract(
-                POSITION_MANAGER_ADDRESS,
-                POSITION_MANAGER_MINIMAL_ABI,
-                provider
-            );
+            // 1. Get Position Info
+            const pos = await pm.positions(tokenId)
+            const liquidity = pos.liquidity.toString()
 
-            const poolAddress = '0x8269d25b908d96169b8e10D0fb12169eF42334e3'; // From addLiquidity call
-            const poolContract = new ethers.Contract(poolAddress, UNISWAP_V3_POOL_ABI, provider);
+            // If no liquidity, stop
+            if (liquidity === "0") {
+                setData(null)
+                setIsLoadingData(false)
+                return
+            }
 
-            // Fetch position and pool data
-            const [positionData, poolData] = await Promise.all([
-                positionManager.positions(tokenId),
-                Promise.all([
-                    poolContract.liquidity(),
-                    poolContract.slot0(),
-                    poolContract.fee(),
-                    poolContract.token0(),
-                    poolContract.token1(),
-                ]),
-            ]);
+            // 2. Find the Pool address dynamically
+            const poolAddress = await factory.getPool(pos.token0, pos.token1, pos.fee)
+            const poolContract = new ethers.Contract(poolAddress, UNISWAP_V3_POOL_ABI, provider)
+            
+            // 3. Get Pool State
+            const [slot0, poolLiquidity] = await Promise.all([
+                poolContract.slot0(),
+                poolContract.liquidity()
+            ])
 
-            const [liquidity, tokensOwed0, tokensOwed1] =
-                positionData.slice(7); // Extract relevant fields
-            const [poolLiquidity, slot0, fee, token0Address, token1Address] = poolData;
+            // 4. Construct SDK Objects
+            // Helper to get symbol (simplified for known tokens, fallback to generic)
+            const t0Info = Object.values(TOKENS).find(t => t.address.toLowerCase() === pos.token0.toLowerCase())
+            const t1Info = Object.values(TOKENS).find(t => t.address.toLowerCase() === pos.token1.toLowerCase())
+            
+            const chainId = 11155111 // Or (await provider.getNetwork()).chainId
+            const token0 = new Token(chainId, pos.token0, t0Info?.decimals || 18, "T0", "Token0")
+            const token1 = new Token(chainId, pos.token1, t1Info?.decimals || 18, "T1", "Token1")
 
-            // Create Token objects (assuming chainId 11155111 from context)
-            const chainId = 11155111;
-            const token0 = new Token(chainId, token0Address, 18, 'USDT', 'USDT');
-            const token1 = new Token(chainId, token1Address, 18, 'ETH', 'ETH');
-
-            // Create Pool object
             const pool = new Pool(
-                token0,
-                token1,
-                Number(fee),
-                slot0[0].toString(),
-                poolLiquidity.toString(),
-                Number(slot0[1])
-            );
+                token0, token1, Number(pos.fee), 
+                slot0.sqrtPriceX96.toString(), poolLiquidity.toString(), Number(slot0.tick)
+            )
 
-            // Create Position object
             const position = new Position({
                 pool,
-                liquidity: liquidity.toString(),
-                tickLower: Number(positionData[5]),
-                tickUpper: Number(positionData[6]),
-            });
+                liquidity: liquidity,
+                tickLower: Number(pos.tickLower),
+                tickUpper: Number(pos.tickUpper)
+            })
 
-            // Calculate amounts
-            const amount0 = Number(position.amount0.toSignificant(6, { groupSeparator: '' }));
-            const amount1 = Number(position.amount1.toSignificant(6, { groupSeparator: '' }));
-            const usdtAmount = token0.symbol === 'usdc' ? amount0 : amount1;
-            const ethAmount = token1.symbol === 'usdt' ? amount1 : amount0;
-            const shareOfPool = (Number(liquidity) / Number(poolLiquidity)) * 100;
+            // 5. Update State
+            setData({
+                amount0: position.amount0.toSignificant(6),
+                amount1: position.amount1.toSignificant(6),
+                symbol0: t0Info ? Object.keys(TOKENS).find(key => TOKENS[key].address.toLowerCase() === pos.token0.toLowerCase()) || "USDT" : "USDT",
+                symbol1: t1Info ? Object.keys(TOKENS).find(key => TOKENS[key].address.toLowerCase() === pos.token1.toLowerCase()) || "USDC" : "USDC",
+                shareOfPool: ((Number(liquidity) / Number(poolLiquidity)) * 100).toFixed(4)
+            })
 
-            // Estimate rewards (uncollected fees)
-            const reward = Number(tokensOwed0) / 1e18 + Number(tokensOwed1) / 1e18; // Simplified, adjust based on feeGrowth
-
-            setLiquidityData({
-                poolTokens: Number(liquidity) / 1e18, // Scale for display
-                usdtAmount,
-                ethAmount,
-                shareOfPool,
-                reward: reward > 0 ? reward : null,
-            });
         } catch (error) {
-            console.error('Error fetching position data:', error);
+            console.error("Error loading position:", error)
+            setData(null)
+        } finally {
+            setIsLoadingData(false)
         }
-    }, [tokenId]);
+    }, [tokenId, provider])
 
-    // Fetch data when tokenId changes
+    // Debounce fetch
     useEffect(() => {
-        if (tokenId) fetchPositionData();
-    }, [tokenId, fetchPositionData]);
-    const handlePercentageSelect = (percent: 25 | 50 | 75 | 100) => {
-        setSelectedPercentage(percent)
-        setPercentage(percent)
-    }
-
-    const handleEnable = () => {
-        setIsEnabled(true)
-        // In real app, this would trigger wallet connection/approval
-    }
+        const timeout = setTimeout(() => {
+            if (tokenId) fetchPositionData()
+        }, 800)
+        return () => clearTimeout(timeout)
+    }, [tokenId, fetchPositionData])
 
     const handleRemove = async () => {
-        if (!tokenId) {
-            alert('Please enter a valid token ID');
-            return;
-        }
-        if (percentage <= 0 || percentage > 100) {
-            alert('Please enter a percentage between 1 and 100');
-            return;
-        }
-
-        setIsRemovingLiquidity(true);
+        if (!tokenId || !data) return
+        setIsRemoving(true)
         try {
-            await removeLiquidity(Number(tokenId), percentage);
-            alert('Liquidity removed successfully!');
-            // Refresh position data
-        } catch (error) {
-            console.error('Error removing liquidity:', error);
-            alert('Failed to remove liquidity');
+            await removeLiquidity(Number(tokenId), percentage)
+            alert("Liquidity Removed Successfully!")
+            fetchPositionData() // Refresh
+        } catch (e: any) {
+            alert("Failed: " + e.message)
         } finally {
-            setIsRemovingLiquidity(false);
+            setIsRemoving(false)
         }
-    };
+    }
+
+    // Calculated amounts to receive
+    const receive0 = data ? (parseFloat(data.amount0) * percentage / 100).toFixed(6) : "0.00"
+    const receive1 = data ? (parseFloat(data.amount1) * percentage / 100).toFixed(6) : "0.00"
 
     return (
-        <div className="flex items-center justify-center min-h-screen">
-            <div className="container mx-auto px-4">
-                <div
-                    className="hero-border w-full p-[3.5px] lg:rounded-[40px] rounded-[20px]"
-                    style={{
-                        background: `radial-gradient(98% 49.86% at 100.03% 100%, #33a36d 0%, rgba(51, 163, 109, 0.05) 100%), 
-                        radial-gradient(24.21% 39.21% at 0% 0%, rgba(255, 255, 255, 0.81) 0%, rgba(255, 255, 255, 0.19) 100%), 
-                        radial-gradient(21.19% 40.1% at 100.03% 0%, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 100%)`,
-                    }}
-                >
-                    <div className="bg-[linear-gradient(105.87deg,rgba(0,0,0,0.3)_3.04%,rgba(0,0,0,0.1)_96.05%)] relative backdrop-blur-[80px] w-full lg:rounded-[40px] rounded-[20px] px-[15px] lg:px-[50px] py-[20px] lg:py-[60px]">
-                        <div className="relative z-10 border bg-[#FFFFFF66] inline-flex px-2 py-1.5 rounded-[14px] border-solid border-[#FFFFFF1A] gap-2 mb-[24px]">
-                            <button
-                                onClick={() => setActiveTab('exchange')}
-                                className={`rounded-[8px] font-normal text-sm leading-[100%] px-[22px] py-[13px] transition-colors ${activeTab === 'exchange'
-                                    ? 'bg-white text-[#2A8576] font-bold'
-                                    : 'text-black'
-                                    }`}
-                            >
-                                Exchange
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('pool')}
-                                className={`rounded-[8px] font-normal text-sm leading-[100%] px-[22px] py-[13px] transition-colors ${activeTab === 'pool'
-                                    ? 'bg-white text-[#2A8576] font-bold'
-                                    : 'text-black'
-                                    }`}
-                            >
-                                Pool
-                            </button>
+        <div className="w-full flex justify-center">
+            <div className="w-full max-w-4xl relative md:rounded-[40px] rounded-[20px] p-[2px] bg-[radial-gradient(98%_49.86%_at_100.03%_100%,#75912B_0%,rgba(117,145,43,0.05)_100%),radial-gradient(24.21%_39.21%_at_0%_0%,rgba(255,255,255,0.81)_0%,rgba(255,255,255,0.19)_100%),radial-gradient(21.19%_40.1%_at_100.03%_0%,rgba(0,0,0,0.5)_0%,rgba(0,0,0,0)_100%)]">
+                <div className="md:rounded-[40px] rounded-[20px] bg-[linear-gradient(0deg,rgba(0,0,0,1)_10%,rgba(0,0,0,0.50)_100%)] backdrop-blur-sm lg:p-[40px] sm:p-[30px] p-[20px]">
+                    
+                    <h2 className="mb-6 font-semibold text-2xl sm:text-3xl text-white">Remove Liquidity</h2>
+
+                    {/* Input Section */}
+                    <div className="mb-8">
+                        <label className="text-sm text-[#FFFFFF99] mb-2 block">Position Token ID</label>
+                        <div className="relative">
+                            <input
+                                type="number"
+                                placeholder="e.g. 142"
+                                value={tokenId}
+                                onChange={(e) => setTokenId(e.target.value)}
+                                className="w-full p-4 rounded-[12px] border border-[#FFFFFF33] bg-[#FFFFFF0D] text-white focus:outline-none focus:border-[#C9FA49] transition-colors"
+                            />
+                            {isLoadingData && (
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                    <Loader2 className="animate-spin text-[#C9FA49]" />
+                                </div>
+                            )}
                         </div>
+                    </div>
 
-                        <h2 className="mb-4 font-bold text-xl sm:text-3xl leading-[100%] text-black">
-                            Remove USDT/USDC Liquidity
-                        </h2>
-                        <p className="text-black font-normal text-xl leading-[18.86px] mb-10">
-                            To Receive USDT and USDC
-                        </p>
-
-                        <div className="flex flex-col lg:flex-row items-start gap-[25px] lg:gap-[51px]">
-                            <div className="flex-1 w-full">
-                                <div className="bg-[#FFFFFF66] border border-solid border-[#FFFFFF1A] rounded-[12px] px-[15px] py-[18px]">
-                                    <p className="font-bold md:text-lg text-base leading-[100%] mb-[17px]">
-                                        Amount
-                                    </p>
-                                    <p className="text-black font-bold text-[22px] leading-[31.43px] mb-2">
-                                        {percentage.toFixed(3)}%
-                                    </p>
+                    {/* Data Display */}
+                    {data ? (
+                        <>
+                            <div className="flex flex-col lg:flex-row gap-8 mb-8">
+                                {/* Slider Section */}
+                                <div className="flex-1 bg-[#FFFFFF0D] border border-[#FFFFFF1A] rounded-[16px] p-6">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <span className="text-[#FFFFFF99]">Amount to Remove</span>
+                                        <span className="text-[#C9FA49] font-bold text-2xl">{percentage}%</span>
+                                    </div>
+                                    
                                     <input
-                                        className="w-full accent-[#2A8576]"
-                                        max="100"
-                                        min="0"
                                         type="range"
+                                        min="0"
+                                        max="100"
                                         value={percentage}
-                                        onChange={handleSliderChange}
+                                        onChange={(e) => setPercentage(Number(e.target.value))}
+                                        className="w-full h-2 bg-[#FFFFFF33] rounded-lg appearance-none cursor-pointer accent-[#C9FA49] mb-6"
                                     />
-                                    <div className="mt-4 flex gap-3 percentage-redio-buttons">
-                                        {[25, 50, 75, 100].map((percent) => (
-                                            <div
-                                                key={percent}
-                                                className="flex-1"
+
+                                    <div className="flex gap-2">
+                                        {[25, 50, 75, 100].map((pct) => (
+                                            <button
+                                                key={pct}
+                                                onClick={() => setPercentage(pct)}
+                                                className={`flex-1 py-2 rounded-[8px] text-sm font-semibold transition-all ${
+                                                    percentage === pct 
+                                                    ? 'bg-[#C9FA49] text-black' 
+                                                    : 'bg-[#FFFFFF1A] text-white hover:bg-[#FFFFFF33]'
+                                                }`}
                                             >
-                                                <input
-                                                    type="radio"
-                                                    name="percentage"
-                                                    id={`${percent}_percentage`}
-                                                    className="peer hidden"
-                                                    checked={
-                                                        selectedPercentage ===
-                                                        percent
-                                                    }
-                                                    onChange={() =>
-                                                        handlePercentageSelect(
-                                                            percent as
-                                                            | 25
-                                                            | 50
-                                                            | 75
-                                                            | 100
-                                                        )
-                                                    }
-                                                />
-                                                <label
-                                                    htmlFor={`${percent}_percentage`}
-                                                    className={`cursor-pointer w-full block bg-[#FFFFFF66] border border-solid border-[#FFFFFF1A] rounded-[8px] py-[5px] lg:py-[11px] text-[16px] lg:text-base font-semibold text-center transition-colors ${selectedPercentage ===
-                                                        percent
-                                                        ? 'border-white text-[#2a8576] bg-white'
-                                                        : 'text-[#80888A] lg:text-[#1D3B5E]'
-                                                        }`}
-                                                >
-                                                    {percent}%
-                                                </label>
-                                            </div>
+                                                {pct}%
+                                            </button>
                                         ))}
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className="m-auto">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="28"
-                                    height="29"
-                                    fill="none"
-                                >
-                                    <path
-                                        fill="#000"
-                                        d="M19.876.5H8.138C3.04.5 0 3.538 0 8.634v11.718c0 5.11 3.04 8.148 8.138 8.148h11.724C24.96 28.5 28 25.462 28 20.366V8.634C28.014 3.538 24.974.5 19.876.5Zm-7.284 21c0 .14-.028.266-.084.406a1.095 1.095 0 0 1-.574.574 1.005 1.005 0 0 1-.406.084 1.056 1.056 0 0 1-.743-.308l-4.132-4.13a1.056 1.056 0 0 1 0-1.484 1.057 1.057 0 0 1 1.485 0l2.34 2.338V7.5c0-.574.476-1.05 1.05-1.05.574 0 1.064.476 1.064 1.05v14Zm8.755-9.128a1.04 1.04 0 0 1-.743.308 1.04 1.04 0 0 1-.742-.308l-2.34-2.338V21.5c0 .574-.475 1.05-1.05 1.05-.574 0-1.05-.476-1.05-1.05v-14c0-.14.028-.266.084-.406.112-.252.308-.462.574-.574a.99.99 0 0 1 .798 0c.127.056.238.126.337.224l4.132 4.13c.406.42.406 1.092 0 1.498Z"
-                                    />
-                                </svg>
-                            </div>
-
-                            <div className="flex-1 w-full h-full">
-                                <div className="bg-[#FFFFFF66] border border-solid border-[#FFFFFF1A] rounded-[12px] px-[15px] pt-[18px] pb-[28px] h-full">
-                                    <p className="font-bold md:text-lg text-base leading-[100%] mb-[38px]">
-                                        You will Receive
-                                    </p>
-                                    <div className="space-y-[28px] font-bold md:text-[22px] text-base leading-[100%]">
-                                        <div className="flex justify-between">
-                                            <div className="flex items-center space-x-2">
-                                                <div className="size-[30px] bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-xs">
-                                                    USDT
+                                {/* Output Section */}
+                                <div className="flex-1 bg-[#FFFFFF0D] border border-[#FFFFFF1A] rounded-[16px] p-6 flex flex-col justify-between">
+                                    <div>
+                                        <p className="text-[#FFFFFF99] mb-4">You will Receive</p>
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-center">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-8 h-8 rounded-full bg-[#00B67A] flex items-center justify-center text-white text-xs font-bold">T</div>
+                                                    <span className="text-white font-medium">{data.symbol0}</span>
                                                 </div>
-                                                <span className="font-normal text-lg leading-[100%]">
-                                                    USDT
-                                                </span>
+                                                <span className="text-white font-bold text-xl">{receive0}</span>
                                             </div>
-                                            <span>
-                                                {((liquidityData.usdtAmount * percentage) / 100).toFixed(6)}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <div className="flex items-center space-x-2">
-                                                <div className="size-[30px] bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
-                                                    USDC
+                                            <div className="flex justify-between items-center">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-8 h-8 rounded-full bg-[#2775CA] flex items-center justify-center text-white text-xs font-bold">C</div>
+                                                    <span className="text-white font-medium">{data.symbol1}</span>
                                                 </div>
-                                                <span className="font-normal text-lg leading-[100%]">
-                                                    USDC
-                                                </span>
+                                                <span className="text-white font-bold text-xl">{receive1}</span>
                                             </div>
-                                            <span>
-                                                {((liquidityData.ethAmount * percentage) / 100).toFixed(6)}
-                                            </span>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col lg:flex-row items-start gap-[25px] lg:gap-[51px] mt-[40px]">
-                            <div className="flex-1 w-full">
-                                <div className="bg-[#FFFFFF66] border border-solid border-[#FFFFFF1A] rounded-[12px] px-[15px] py-[18px]">
-                                    <p className="font-bold md:text-lg text-base leading-[100%] mb-[34px]">
-                                        Prices and Pool Share:
-                                    </p>
-                                    <div className="space-y-[28px]">
-                                        <div className="flex justify-between">
-                                            <span className="font-normal text-lg leading-[100%]">
-                                                1 USDT =
-                                            </span>
-                                            <span className="font-bold md:text-[22px] text-base leading-[100%]">
-                                                {liquidityData.ethAmount.toFixed(5)} ETH
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="font-normal text-lg leading-[100%]">
-                                                1 USDC =
-                                            </span>
-                                            <span className="font-bold md:text-[22px] text-base leading-[100%]">
-                                                {liquidityData.usdtAmount.toFixed(5)}USDT
-                                            </span>
-                                        </div>
+                                    
+                                    <div className="mt-6 pt-4 border-t border-[#FFFFFF1A] flex justify-between items-center">
+                                        <span className="text-[#FFFFFF99] text-sm">Pool Share</span>
+                                        <span className="text-[#C9FA49] font-mono">{data.shareOfPool}%</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="hidden lg:block">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="28"
-                                    height="29"
-                                    fill="none"
-                                ></svg>
-                            </div>
-
-                            <div className="flex-1 w-full h-full">
-                                <div className="bg-[#FFFFFF66] border border-solid border-[#FFFFFF1A] rounded-[12px] px-[15px] pt-[18px] pb-[28px] h-full">
-                                    <p className="font-bold md:text-lg text-base leading-[100%] mb-[20px]">
-                                        LP Tokens in your Wallet
-                                    </p>
-                                    <div className="space-y-[8px]">
-                                        <div className="flex justify-between">
-                                            <div className="flex items-center space-x-2 mb-2.5">
-                                                <div className="size-[24px] bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-xs">
-                                                    U
-                                                </div>
-                                                <div className="size-[24px] bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
-                                                    $
-                                                </div>
-                                                <span className="font-bold md:text-lg text-base leading-[100%]">
-                                                    USDT - USDC
-                                                </span>
-                                            </div>
-                                            <span className="font-bold md:text-[22px] text-base leading-[100%]">
-                                                {liquidityData.poolTokens.toFixed(11)}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="font-normal text-lg leading-[100%]">
-                                                Share of Pool:
-                                            </span>
-                                            <span>{liquidityData.shareOfPool.toFixed(2)}%</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="font-normal text-lg leading-[100%]">
-                                                Pool USDT:
-                                            </span>
-                                            <span>{liquidityData.usdtAmount.toFixed(5)}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="font-normal text-lg leading-[100%]">
-                                                Pool USDC:
-                                            </span>
-                                            <span>{liquidityData.ethAmount.toFixed(5)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <input
-                                    type="text"
-                                    placeholder="Enter Position Token ID"
-                                    value={tokenId}
-                                    onChange={(e) => setTokenId(e.target.value)}
-                                    className="w-full mb-4 p-2 rounded-[8px] border border-[#FFFFFF1A] bg-transparent text-black"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-[18px] mt-[40px]">
-                            <button
-                                onClick={handleEnable}
-                                disabled={isEnabled}
-                                className={`rounded-[150px] p-[16px_92px] font-semibold text-base leading-[17.6px] border-2 transition-colors ${isEnabled
-                                    ? 'text-gray-500 bg-gray-300 border-gray-300 cursor-not-allowed'
-                                    : 'text-white bg-[#3DBEA3] border-[#3DBEA3] hover:bg-[#35a691]'
-                                    }`}
-                            >
-                                {isEnabled ? 'Enabled' : 'Enable'}
-                            </button>
-                            <button
+                            <button 
                                 onClick={handleRemove}
-                                disabled={!isEnabled}
-                                className={`rounded-[150px] p-[16px_92px] font-semibold text-base leading-[17.6px] border-2 transition-colors ${!isEnabled
-                                    ? 'text-gray-400 border-gray-300 cursor-not-allowed'
-                                    : 'text-[#3DBEA3] border-[#3DBEA3] hover:bg-[#3DBEA3] hover:text-white'
-                                    }`}
+                                disabled={isRemoving || percentage === 0}
+                                className={`w-full py-4 rounded-[40px] font-bold text-lg transition-all ${
+                                    isRemoving || percentage === 0
+                                    ? 'bg-[#FFFFFF33] text-[#FFFFFF66] cursor-not-allowed'
+                                    : 'bg-[#FF4C4C] text-white hover:bg-[#ff3333]'
+                                }`}
                             >
-                                {isRemovingLiquidity ? "Removing.." : "Remove"}
+                                {isRemoving ? <span className="flex items-center justify-center gap-2"><Loader2 className="animate-spin" /> Confirming...</span> : 'Remove Liquidity'}
                             </button>
+                        </>
+                    ) : (
+                        <div className="text-center py-10 text-[#FFFFFF66]">
+                            {tokenId ? "No valid position found for this ID" : "Enter a Token ID above to load your position"}
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
         </div>
