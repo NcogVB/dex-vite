@@ -1,5 +1,4 @@
 import JoinCommunity from './JoinCommunity'
-import WalletButton from './WalletButton'
 
 const HeroSection = () => (
     <div className="hero-section">
@@ -14,7 +13,6 @@ const HeroSection = () => (
                 easy-to-use token swap service that allows you to seamlessly
                 exchange one type of token for another with maximum efficiency.
             </p>
-            <WalletButton />
             <div className="hero-border mt-[105px] mb-[191px] w-full p-[3.5px] md:rounded-[40px] rounded-[20px]">
                 <div className="flex flex-col gap-[25px] md:gap-[51px] bg-[linear-gradient(105.87deg,_rgba(0,0,0,0.2)_3.04%,_rgba(0,0,0,0)_96.05%)] relative backdrop-blur-[80px] w-full md:rounded-[40px] rounded-[20px] px-[15px] md:px-[50px] py-[30px] md:py-[60px] ">
                     <div className='w-full flex md:flex justify-between items-center gap-[25px] md:gap-[51px]">'>
