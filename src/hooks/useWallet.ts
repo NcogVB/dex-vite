@@ -4,8 +4,8 @@ interface Window {
     ethereum?: any;
 }
 
-const POLYGON_CHAIN_ID = '0x89'; // 137
-const POLYGON_RPC = 'https://polygon-rpc.com/';
+const POLYGON_CHAIN_ID = '0x13882'; // 137
+const POLYGON_RPC = 'https://polygon-amoy.drpc.org';
 
 export const useWallet = () => {
     const [account, setAccount] = useState<string | null>(null);

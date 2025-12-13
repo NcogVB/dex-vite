@@ -56,7 +56,7 @@ const LandingHeader: React.FC = () => {
                         {/* Network Badge */}
                         <div className="hidden md:flex items-center px-4 py-2 rounded-[40px] border border-[#C9FA49]/30 bg-[#1F2321] text-white/80 text-sm">
                             <span className={`w-2 h-2 rounded-full mr-2 ${isPolygon ? 'bg-[#C9FA49]' : 'bg-red-500'}`}></span>
-                            {isPolygon ? 'Polygon' : 'Wrong Network'}
+                            {isPolygon ? 'Polygon Amoy' : 'Wrong Network'}
                         </div>
 
                         {/* Balance & Address Button */}
