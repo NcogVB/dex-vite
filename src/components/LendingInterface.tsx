@@ -1,21 +1,20 @@
-import { ChevronDown, Info, ShieldCheck, Wallet } from 'lucide-react'
+import { ChevronDown, Info, ShieldCheck, Wallet, Loader2 } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { useWallet } from '../hooks/useWallet'
-import { useLendingContract } from '../hooks/useLendingContract.'
+import { useLendingContract } from '../hooks/useLendingContract'
+import { TOKENS } from '../utils/addresses'
 
-interface Token {
-    symbol: string
-    name: string
-    address: string
-    img: string
-    balance: number
+interface TokenUI {
+    symbol: string;
+    name: string;
+    address: string;
+    img: string;
+    balance: string;
 }
 
-// Add your specific token addresses here
-const TOKENS: Token[] = [
-    { symbol: 'USDC', name: 'USD Coin', address: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', img: '/images/stock-5.png', balance: 0 },
-    { symbol: 'WETH', name: 'Wrapped Ether', address: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619', img: '/images/ethereum-logo.png', balance: 0 },
-    { symbol: 'USDT', name: 'Tether', address: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F', img: '/images/stock-3.png', balance: 0 },
+const TOKEN_LIST: TokenUI[] = [
+    { symbol: 'USDC', name: 'USD Coin', address: TOKENS.USDC.address, img: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png?v=026', balance: '0' },
+    { symbol: 'USDT', name: 'Tether', address: TOKENS.USDT.address, img: 'https://cryptologos.cc/logos/tether-usdt-logo.png?v=026', balance: '0' },
 ]
 
 const LendingInterface = () => {
@@ -25,11 +24,12 @@ const LendingInterface = () => {
     const [activeTab, setActiveTab] = useState<'supply' | 'borrow'>('supply')
     const [actionType, setActionType] = useState<'deposit' | 'withdraw' | 'borrow' | 'repay'>('deposit')
     const [amount, setAmount] = useState('')
-    const [selectedToken, setSelectedToken] = useState<Token>(TOKENS[0])
+    const [selectedToken, setSelectedToken] = useState<TokenUI>(TOKEN_LIST[0])
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-    
+
     const dropdownRef = useRef<HTMLDivElement>(null)
 
+    // Sync sub-actions when main tab changes
     useEffect(() => {
         if (activeTab === 'supply') setActionType('deposit')
         else setActionType('borrow')
@@ -37,6 +37,8 @@ const LendingInterface = () => {
 
     const handleAction = async () => {
         if (!account) return connectWallet()
+        if (!amount || parseFloat(amount) <= 0) return alert("Enter Amount")
+
         try {
             await executeTransaction(actionType, selectedToken.address, amount)
             setAmount('')
@@ -47,12 +49,13 @@ const LendingInterface = () => {
     }
 
     const handleMax = () => {
-        // Simple mock for max, in real app fetch actual wallet balance or contract balance
+        // Logic for max buttons
         if (actionType === 'withdraw') setAmount(stats.collateralAmount)
         else if (actionType === 'repay') setAmount(stats.debtAmount)
-        else setAmount('100') 
+        else setAmount('100') // Placeholder for wallet balance
     }
 
+    // Close dropdown on outside click
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setIsDropdownOpen(false)
@@ -88,10 +91,10 @@ const LendingInterface = () => {
                         <div className="bg-[#00000066] border border-[#FFFFFF1A] rounded-2xl p-4">
                             <div className="flex items-center gap-2 text-[#FFFFFF99] text-sm mb-2">
                                 <Info size={16} />
-                                <span>Borrow APR</span>
+                                <span>LP Threshold</span>
                             </div>
                             <div className="text-2xl font-bold text-white">
-                                {(parseFloat(stats.borrowAPR) * 100).toFixed(2)}%
+                                {(parseFloat(stats.liquidationThreshold) * 100).toFixed(2)}%
                             </div>
                         </div>
 
@@ -101,7 +104,7 @@ const LendingInterface = () => {
                                 <span>My Debt</span>
                             </div>
                             <div className="text-2xl font-bold text-white">
-                                {parseFloat(stats.debtAmount).toFixed(4)} <span className="text-sm font-normal text-[#FFFFFF99]">Unit</span>
+                                {parseFloat(stats.debtAmount).toFixed(4)} <span className="text-sm font-normal text-[#FFFFFF99]">{stats.debtToken || 'USD'}</span>
                             </div>
                         </div>
                     </div>
@@ -111,15 +114,16 @@ const LendingInterface = () => {
             {/* Main Action Card */}
             <div className="w-full relative md:rounded-[40px] rounded-[20px] p-[2px] bg-[radial-gradient(98%_49.86%_at_100.03%_100%,#75912B_0%,rgba(117,145,43,0.05)_100%),radial-gradient(24.21%_39.21%_at_0%_0%,rgba(255,255,255,0.81)_0%,rgba(255,255,255,0.19)_100%),radial-gradient(21.19%_40.1%_at_100.03%_0%,rgba(0,0,0,0.5)_0%,rgba(0,0,0,0)_100%)]">
                 <div className="md:rounded-[40px] rounded-[20px] bg-[linear-gradient(0deg,rgba(0,0,0,1)_10%,rgba(0,0,0,0.50)_100%)] backdrop-blur-sm lg:p-[40px] sm:p-[30px] p-[15px]">
-                    
+
+                    {/* Tabs */}
                     <div className="flex gap-4 mb-8 border-b border-[#FFFFFF1A] pb-4">
-                        <button 
+                        <button
                             onClick={() => setActiveTab('supply')}
                             className={`text-lg font-semibold px-4 py-2 transition-colors ${activeTab === 'supply' ? 'text-[#C9FA49] border-b-2 border-[#C9FA49]' : 'text-[#FFFFFF99] hover:text-white'}`}
                         >
                             Supply Collateral
                         </button>
-                        <button 
+                        <button
                             onClick={() => setActiveTab('borrow')}
                             className={`text-lg font-semibold px-4 py-2 transition-colors ${activeTab === 'borrow' ? 'text-[#C9FA49] border-b-2 border-[#C9FA49]' : 'text-[#FFFFFF99] hover:text-white'}`}
                         >
@@ -127,20 +131,22 @@ const LendingInterface = () => {
                         </button>
                     </div>
 
+                    {/* Sub-Actions */}
                     <div className="grid grid-cols-2 gap-2 bg-[#00000066] p-[6px_8px] rounded-xl border border-[#FFFFFF33] w-[260px] mb-8">
                         {activeTab === 'supply' ? (
                             <>
-                                <button onClick={() => setActionType('deposit')} className={`cursor-pointer flex-1 h-[45px] rounded-lg font-semibold text-sm transition-all ${actionType === 'deposit' ? 'bg-[#C9FA49] text-[#000000]' : 'text-[#FFFFFF] hover:bg-[#FFFFFF1A]'}`}>Deposit</button>
-                                <button onClick={() => setActionType('withdraw')} className={`cursor-pointer flex-1 h-[45px] rounded-lg font-semibold text-sm transition-all ${actionType === 'withdraw' ? 'bg-[#C9FA49] text-[#000000]' : 'text-[#FFFFFF] hover:bg-[#FFFFFF1A]'}`}>Withdraw</button>
+                                <button onClick={() => setActionType('deposit')} className={`flex-1 h-[45px] rounded-lg font-semibold text-sm transition-all ${actionType === 'deposit' ? 'bg-[#C9FA49] text-black' : 'text-white hover:bg-[#FFFFFF1A]'}`}>Deposit</button>
+                                <button onClick={() => setActionType('withdraw')} className={`flex-1 h-[45px] rounded-lg font-semibold text-sm transition-all ${actionType === 'withdraw' ? 'bg-[#C9FA49] text-black' : 'text-white hover:bg-[#FFFFFF1A]'}`}>Withdraw</button>
                             </>
                         ) : (
                             <>
-                                <button onClick={() => setActionType('borrow')} className={`cursor-pointer flex-1 h-[45px] rounded-lg font-semibold text-sm transition-all ${actionType === 'borrow' ? 'bg-[#C9FA49] text-[#000000]' : 'text-[#FFFFFF] hover:bg-[#FFFFFF1A]'}`}>Borrow</button>
-                                <button onClick={() => setActionType('repay')} className={`cursor-pointer flex-1 h-[45px] rounded-lg font-semibold text-sm transition-all ${actionType === 'repay' ? 'bg-[#C9FA49] text-[#000000]' : 'text-[#FFFFFF] hover:bg-[#FFFFFF1A]'}`}>Repay</button>
+                                <button onClick={() => setActionType('borrow')} className={`flex-1 h-[45px] rounded-lg font-semibold text-sm transition-all ${actionType === 'borrow' ? 'bg-[#C9FA49] text-black' : 'text-white hover:bg-[#FFFFFF1A]'}`}>Borrow</button>
+                                <button onClick={() => setActionType('repay')} className={`flex-1 h-[45px] rounded-lg font-semibold text-sm transition-all ${actionType === 'repay' ? 'bg-[#C9FA49] text-black' : 'text-white hover:bg-[#FFFFFF1A]'}`}>Repay</button>
                             </>
                         )}
                     </div>
 
+                    {/* Input Area */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <h3 className="text-[#FFFFFF] font-semibold text-lg capitalize">{actionType} Amount</h3>
@@ -166,7 +172,7 @@ const LendingInterface = () => {
                                     </button>
                                     {isDropdownOpen && (
                                         <ul className="absolute right-0 top-full mt-2 w-full bg-[#000000] border border-[#FFFFFF1A] rounded-lg shadow-lg z-10 min-w-[200px]">
-                                            {TOKENS.map(token => (
+                                            {TOKEN_LIST.map(token => (
                                                 <li
                                                     key={token.symbol}
                                                     onClick={() => { setSelectedToken(token); setIsDropdownOpen(false) }}
@@ -192,10 +198,11 @@ const LendingInterface = () => {
                         </div>
                     </div>
 
+                    {/* Stats Grid */}
                     <div className="grid md:grid-cols-2 grid-cols-1 gap-4 my-6">
                         <div className="bg-[#00000066] border border-[#FFFFFF1A] rounded-xl p-4">
                             <p className="text-[#FFFFFF99] text-sm mb-1">Supplied Collateral</p>
-                            <p className="text-[#FFFFFF] font-semibold text-lg">{parseFloat(stats.collateralAmount).toFixed(4)}</p>
+                            <p className="text-[#FFFFFF] font-semibold text-lg">{parseFloat(stats.collateralAmount).toFixed(4)} {stats.collateralToken}</p>
                         </div>
                         <div className="bg-[#00000066] border border-[#FFFFFF1A] rounded-xl p-4">
                             <p className="text-[#FFFFFF99] text-sm mb-1">Max LTV</p>
@@ -203,16 +210,16 @@ const LendingInterface = () => {
                         </div>
                     </div>
 
+                    {/* Submit Button */}
                     <button
                         onClick={handleAction}
                         disabled={isProcessing || !amount || parseFloat(amount) <= 0}
-                        className={`w-full py-4 rounded-[40px] font-semibold text-base transition-all duration-300 capitalize ${
-                            isProcessing || !amount || parseFloat(amount) <= 0
-                                ? 'bg-[#FFFFFF33] text-[#FFFFFF66] cursor-not-allowed'
+                        className={`w-full py-4 rounded-[40px] font-semibold text-base transition-all duration-300 capitalize flex items-center justify-center gap-2 ${isProcessing || !amount || parseFloat(amount) <= 0
+                                ? 'bg-[#FFFFFF1A] text-[#FFFFFF66] cursor-not-allowed'
                                 : 'bg-[#C9FA49] text-[#000000] hover:bg-[#b8e842]'
-                        }`}
+                            }`}
                     >
-                        {isProcessing ? 'Processing...' : !account ? 'Connect Wallet' : `${actionType} ${selectedToken.symbol}`}
+                        {isProcessing ? <><Loader2 className="animate-spin" /> Processing...</> : !account ? 'Connect Wallet' : `${actionType} ${selectedToken.symbol}`}
                     </button>
                 </div>
             </div>

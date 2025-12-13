@@ -30,7 +30,22 @@ export const POSITION_MANAGER_MINIMAL_ABI = [
     "function balanceOf(address owner) external view returns (uint256)",
     "function tokenOfOwnerByIndex(address owner, uint256 index) external view returns (uint256)" 
 ];
+// ... existing ABIs
 
+export const LENDING_ABI = [
+    "function depositCollateral(address token, uint256 amount) external",
+    "function withdrawCollateral(uint256 amount) external",
+    "function borrow(address borrowToken, uint256 amount) external",
+    "function repay(uint256 amount) external",
+    "function getHealthFactor(address user) external view returns (uint256)",
+    "function getBorrowAPRPercent() external view returns (uint256)",
+    "function collaterals(address user) external view returns (address token, uint256 amount)",
+    "function debts(address user) external view returns (address token, uint256 principal, uint256 interestIndex, uint256 lastAccrued)",
+    "function getCollateralValue(address user) external view returns (uint256)",
+    "function getSupplyAPY(address user) external view returns (uint256)",
+    "function liquidationThreshold() external view returns (uint256)",
+    "function maxLTV() external view returns (uint256)"
+];
 // ... keep other ABIs
 
 export const UNISWAP_V3_POOL_ABI = [
