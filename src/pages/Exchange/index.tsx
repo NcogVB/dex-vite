@@ -341,7 +341,7 @@ const Exchange = () => {
                     </div>
                     <div className="mt-4 p-[1px] rounded-lg bg-[radial-gradient(98%_49.86%_at_100.03%_100%,#75912B_0%,rgba(117,145,43,0.05)_100%)]">
                         <div className="rounded-lg bg-[linear-gradient(0deg,#121212,#121212)] p-4">
-                            <h3 className="text-center text-sm text-[#9D98A4] font-normal">Connect wallet to see your positions</h3>
+                            <h3 className="text-center text-sm text-[#9D98A4] font-normal"> see your positions</h3>
                         </div>
                     </div>
                 </div>

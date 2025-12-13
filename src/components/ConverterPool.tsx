@@ -39,7 +39,7 @@ const ConverterPool: React.FC = () => {
         try {
             const provider = new ethers.BrowserProvider((window as any).ethereum);
             const positionManager = new ethers.Contract(POSITION_MANAGER_ADDRESS, POSITION_MANAGER_MINIMAL_ABI, provider);
-            const poolAddress = '0x5Fa9F80DeAB37fBAD94229078E34551B88f1BF73';
+            const poolAddress = '0x64086EEC039b41228f25C326F5e0fa6571d72e00';
             const poolContract = new ethers.Contract(poolAddress, UNISWAP_V3_POOL_ABI, provider);
 
             const [positionData, poolData] = await Promise.all([
@@ -103,9 +103,9 @@ const ConverterPool: React.FC = () => {
         setIsAddingLiquidity(true);
         try {
             await addLiquidity({
-                poolAddress: '0x5Fa9F80DeAB37fBAD94229078E34551B88f1BF73',
-                tokenA: '0x66A8354e9A5a214d347b4b4554c22F27006Be398',
-                tokenB: '0x71297bB76b7624598fD4C7a90d62A2BfE8166E74',
+                poolAddress: '0x64086EEC039b41228f25C326F5e0fa6571d72e00',
+                tokenA: '0xA6fbc65420327B89e43d50AB84E12E798fA9Cb46',
+                tokenB: '0x285d3b54af96cBccA5C05cE4bA7F2dcD56bfc0c4',
                 amountA: AddingAmount.toString(),
                 amountB: AddingAmount.toString(),
             });
