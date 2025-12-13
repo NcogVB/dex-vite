@@ -6,5 +6,6 @@ export const TOKENS: Record<string, { address: string; decimals: number }> = {
     USDT: { address: "0x285d3b54af96cBccA5C05cE4bA7F2dcD56bfc0c4", decimals: 18 },
 };
 export const LENDING_CONTRACT_ADDRESS = "0xf0bb62b168E7aDBf313217EFdD448897aFCe8fD6";
+export const INSURANCE_CONTRACT_ADDRESS = "0x006EA070A3811798e440e1675d580dEB8828515D";
 export const POSITION_MANAGER_ADDRESS = "0x61d1F08f42189257148D54550C9B089a638B59d5"; 
 export const FEE_TIERS = [3000]; // 0.05%, 0.3%, 1%

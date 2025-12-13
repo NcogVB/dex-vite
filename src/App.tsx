@@ -6,6 +6,7 @@ import Swap from './pages/swap'
 import Exchange from './pages/Exchange'
 import Home from './pages/Home'
 import Lending from './pages/LB'
+import Insurance from './pages/Insurance'
 
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
         <Route path="/bridge" element={<Bridge />} />
         <Route path="/swap" element={<Swap />} />
         <Route path="/Exchange" element={<Exchange />} />
+        <Route path="/Insurance" element={<Insurance />} />
         <Route path="/LendingBorrowing" element={<Lending />} />
       </Route>
     </Routes>
