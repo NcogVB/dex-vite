@@ -116,8 +116,8 @@ const Exchange: React.FC = () => {
                     const data: BackendData = await res.json();
 
                     // Parse Orderbook (Adding pseudo IDs based on timestamp for cancellation)
-                    const parsedAsks = data.asks.map((a, i) => ({ ...a, id: a.timestamp, price: Number(a.price), amount: Number(a.amount), side: 'sell' as const }));
-                    const parsedBids = data.bids.map((b, i) => ({ ...b, id: b.timestamp, price: Number(b.price), amount: Number(b.amount), side: 'buy' as const }));
+                    const parsedAsks = data.asks.map((a) => ({ ...a, id: a.timestamp, price: Number(a.price), amount: Number(a.amount), side: 'sell' as const }));
+                    const parsedBids = data.bids.map((b) => ({ ...b, id: b.timestamp, price: Number(b.price), amount: Number(b.amount), side: 'buy' as const }));
 
                     setAsks(parsedAsks);
                     setBids(parsedBids);
