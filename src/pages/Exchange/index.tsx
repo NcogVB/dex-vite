@@ -1,349 +1,577 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { ethers, BrowserProvider, JsonRpcSigner } from 'ethers';
 import './swap.css';
 
-const Exchange = () => {
-    // --- STATE MANAGEMENT ---
-    const [marketDropdownOpen, setMarketDropdownOpen] = useState(false);
-    const [tokenDropdownOpen, setTokenDropdownOpen] = useState(false);
-    const [selectedMarket, setSelectedMarket] = useState({ name: 'ETH-USD', img: './assets/images/eth.svg' });
-    const [selectedToken, setSelectedToken] = useState('ETH');
-    const [sliderValue, setSliderValue] = useState(0);
+// --- TYPES ---
+type TabMode = 'trade' | 'deposit' | 'withdraw';
+type TradeSide = 'buy' | 'sell';
+type AssetSymbol = 'POL' | 'USDT';
 
-    const [asks, setAsks] = useState([
-        [305.4, 0.948], [3051.1, 1.969], [3050.8, 0.979], [3050.7, 5.057],
-        [3050.3, 0.327], [300.2, 1.058], [3049.7, 1.028], [3049.4, 1.640],
-        [5049.3, 7.644], [2049.2, 0.082],
-    ]);
-    const [bids, setBids] = useState([
-        [90.8, 0.327], [3046.6, 7.644], [7046.3, 1.640], [3046.2, 5.057],
-        [146.0, 1.878], [4045.8, 0.977], [3045.4, 0.977], [5045.2, 0.327],
-        [2444.8, 2.547], [543.7, 7.214], [843.4, 0.979], [1045.2, 0.327],
-    ]);
+interface MarketStats {
+    price: number;
+    change: number;
+}
 
-    const tickBarRef = useRef<HTMLDivElement>(null);
+interface UserBalance {
+    POL: number;
+    USDT: number;
+    [key: string]: number;
+}
+
+interface OrderItem {
+    id?: number; // Added ID for cancellation
+    user: string;
+    price: number;
+    amount: number;
+    side?: 'buy' | 'sell';
+}
+
+interface BackendData {
+    asks: { user: string, price: string, amount: string, timestamp: number }[];
+    bids: { user: string, price: string, amount: string, timestamp: number }[];
+    userBalance: any;
+}
+
+// --- CONFIGURATION ---
+const API_URL = "http://localhost:3001";
+const COINGECKO_API = "https://api.coingecko.com/api/v3/simple/price?ids=polygon-ecosystem-token&vs_currencies=usd&include_24hr_change=true";
+
+const CONTRACTS = {
+    EXCHANGE: "0x4f665Ef2EF5336D26a6c06525DD812786E5614c6",
+    USDT: "0x285d3b54af96cBccA5C05cE4bA7F2dcD56bfc0c4",
+    POL: "0x0000000000000000000000000000000000001010"
+};
+
+const ABI = {
+    ERC20: ["function approve(address spender, uint256 amount) external returns (bool)"],
+    EXCHANGE: [
+        "function depositETH() external payable",
+        "function depositToken(address _token, uint256 _amount) external",
+        "function withdrawETH(uint256 _amount, uint256 _nonce, bytes _signature) external",
+        "function withdrawToken(address _token, uint256 _amount, uint256 _nonce, bytes _signature) external"
+    ]
+};
+
+const Exchange: React.FC = () => {
+    // --- STATE ---
+    const [marketDropdownOpen, setMarketDropdownOpen] = useState<boolean>(false);
+    const [selectedMarket] = useState({ name: 'POL-USDT', img: 'https://cryptologos.cc/logos/polygon-matic-logo.png?v=025' });
+    const [sliderValue, setSliderValue] = useState<number>(0);
+
+    const [account, setAccount] = useState<string | null>(null);
+    const [signer, setSigner] = useState<JsonRpcSigner | null>(null);
+    const [marketStats, setMarketStats] = useState<MarketStats>({ price: 0, change: 0 });
+
+    const [asks, setAsks] = useState<OrderItem[]>([]);
+    const [bids, setBids] = useState<OrderItem[]>([]);
+    const [userBalance, setUserBalance] = useState<UserBalance>({ POL: 0, USDT: 0 });
+    const [myOpenOrders, setMyOpenOrders] = useState<OrderItem[]>([]);
+
+    // Limit Box State
+    const [mode, setMode] = useState<TabMode>('trade');
+    const [tradeSide, setTradeSide] = useState<TradeSide>('buy');
+    const [selectedToken, setSelectedToken] = useState<AssetSymbol>('POL');
+    const [priceInput, setPriceInput] = useState<string>('');
+    const [amountInput, setAmountInput] = useState<string>('');
+    const [loading, setLoading] = useState<boolean>(false);
+
+    const totalUSDT = (Number(priceInput) * Number(amountInput)) || 0;
     const chartContainerRef = useRef<HTMLDivElement>(null);
 
-    // Click outside listener
+    // --- INIT ---
     useEffect(() => {
-        const handleClickOutside = () => {
-            setMarketDropdownOpen(false);
-            setTokenDropdownOpen(false);
+        const init = async () => {
+            if (window.ethereum) {
+                try {
+                    const prov = new BrowserProvider(window.ethereum);
+                    const accounts = await prov.send("eth_requestAccounts", []);
+                    const sign = await prov.getSigner();
+                    setAccount(accounts[0]);
+                    setSigner(sign);
+                } catch (err) { console.error(err); }
+            }
         };
-        document.addEventListener('click', handleClickOutside);
-        return () => document.removeEventListener('click', handleClickOutside);
+        init();
     }, []);
 
-    // TradingView Widget
+    // --- DATA FETCHING ---
     useEffect(() => {
-        if (chartContainerRef.current) {
-            chartContainerRef.current.innerHTML = '';
-            const script = document.createElement('script');
-            script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-            script.type = 'text/javascript';
-            script.async = true;
-            script.innerHTML = JSON.stringify({
-                "autosize": true,
-                "symbol": "CAPITALCOM:ETHUSD",
-                "interval": "60",
-                "timezone": "Etc/UTC",
-                "theme": "dark",
-                "style": "1",
-                "locale": "en",
-                "hide_side_toolbar": false,
-                "allow_symbol_change": false,
-                "support_host": "https://www.tradingview.com"
-            });
-            chartContainerRef.current.appendChild(script);
-        }
-    }, []);
+        const fetchData = async () => {
+            // CoinGecko
+            try {
+                const res = await fetch(COINGECKO_API);
+                const data = await res.json();
+                if (data['polygon-ecosystem-token']) {
+                    setMarketStats({
+                        price: data['polygon-ecosystem-token'].usd || 0,
+                        change: data['polygon-ecosystem-token'].usd_24h_change || 0
+                    });
+                }
+            } catch (e) { /* Silent */ }
 
-    // Orderbook Simulation
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setAsks(prev => prev.map(([p, q]) => [Math.max(0, p + (Math.random() - 0.5) * 0.7), q]));
-            setBids(prev => prev.map(([p, q]) => [Math.max(0, p + (Math.random() - 0.5) * 0.7), q]));
-        }, 1100);
+            // Backend
+            if (account) {
+                try {
+                    const res = await fetch(`${API_URL}/market-data?user=${account}`);
+                    const data: BackendData = await res.json();
+
+                    // Parse Orderbook (Adding pseudo IDs based on timestamp for cancellation)
+                    const parsedAsks = data.asks.map((a, i) => ({ ...a, id: a.timestamp, price: Number(a.price), amount: Number(a.amount), side: 'sell' as const }));
+                    const parsedBids = data.bids.map((b, i) => ({ ...b, id: b.timestamp, price: Number(b.price), amount: Number(b.amount), side: 'buy' as const }));
+
+                    setAsks(parsedAsks);
+                    setBids(parsedBids);
+
+                    const rawBal = data.userBalance || {};
+                    setUserBalance({ POL: rawBal.POL || 0, USDT: rawBal.USDT || 0 });
+
+                    // Filter My Orders
+                    const myOrders = [
+                        ...parsedAsks.filter(o => o.user.toLowerCase() === account.toLowerCase()),
+                        ...parsedBids.filter(o => o.user.toLowerCase() === account.toLowerCase())
+                    ];
+                    setMyOpenOrders(myOrders);
+
+                } catch (e) { /* Silent */ }
+            }
+        };
+        fetchData();
+        const interval = setInterval(fetchData, 3000);
         return () => clearInterval(interval);
-    }, []);
+    }, [account]);
 
-    const calcTotals = (data: [any, any][]) => {
-        let total = 0;
-        return data.map(([p, q]) => {
-            total += p * q;
-            return { p, q, total };
-        });
+    // --- HANDLERS ---
+    const handleTrade = async () => {
+        if (!priceInput || !amountInput) return;
+        setLoading(true);
+        try {
+            const res = await fetch(`${API_URL}/order`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user: account,
+                    side: tradeSide,
+                    price: Number(priceInput),
+                    amount: Number(amountInput)
+                })
+            });
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+            alert("Order Placed");
+            setAmountInput('');
+        } catch (e: any) { alert(e.message); }
+        setLoading(false);
     };
 
-    const renderOrderBookRow = (data: any[], type: string) => {
-        const processed = calcTotals(data);
-        const maxPrice = Math.max(...data.map(d => d[0])) || 1;
+    const handleCancel = async (order: OrderItem) => {
+        if (!confirm("Cancel this order?")) return;
+        try {
+            // Note: Your backend needs a /cancel endpoint. 
+            // Currently using a placeholder fetch.
+            const res = await fetch(`${API_URL}/cancel`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user: account, side: order.side, price: order.price })
+            });
+            const data = await res.json();
+            if (data.success) alert("Order Cancelled");
+        } catch (e) {
+            alert("Cancel function requires backend update");
+        }
+    };
+
+    const handleAction = async (actionType: 'deposit' | 'withdraw') => {
+        if (!amountInput || !signer) return;
+        setLoading(true);
+        try {
+            const exContract = new ethers.Contract(CONTRACTS.EXCHANGE, ABI.EXCHANGE, signer);
+            const amountWei = ethers.parseUnits(amountInput, 18);
+
+            if (actionType === 'deposit') {
+                if (selectedToken === 'POL') {
+                    await (await exContract.depositETH({ value: amountWei })).wait();
+                } else {
+                    const usdtContract = new ethers.Contract(CONTRACTS.USDT, ABI.ERC20, signer);
+                    await (await usdtContract.approve(CONTRACTS.EXCHANGE, amountWei)).wait();
+                    await (await exContract.depositToken(CONTRACTS.USDT, amountWei)).wait();
+                }
+                await fetch(`${API_URL}/webhook/deposit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user: account, symbol: selectedToken === 'POL' ? 'POL' : 'USDT', amount: Number(amountInput) })
+                });
+                alert("Deposit Success");
+            } else {
+                const res = await fetch(`${API_URL}/withdraw`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user: account, symbol: selectedToken === 'POL' ? 'POL' : 'USDT', amount: Number(amountInput) })
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                if (selectedToken === 'POL') {
+                    await (await exContract.withdrawETH(amountWei, data.nonce, data.signature)).wait();
+                } else {
+                    await (await exContract.withdrawToken(CONTRACTS.USDT, amountWei, data.nonce, data.signature)).wait();
+                }
+                alert("Withdraw Success");
+            }
+            setAmountInput('');
+        } catch (e: any) { console.error(e); alert("Action Failed: " + (e.reason || e.message)); }
+        setLoading(false);
+    }
+
+    // --- RENDER HELPERS ---
+    const renderOrderBookRow = (data: OrderItem[], type: 'ask' | 'bid') => {
+        let total = 0;
+        const processed = data.map((item) => { total += item.price * item.amount; return { ...item, total }; });
         const maxTotal = processed.at(-1)?.total || 1;
 
-        return processed.map(({ p, q, total }, idx) => {
-            let priceBar = (p / maxPrice) * 100;
-            let totalBar = (total / maxTotal) * 100;
-            priceBar = Math.min(priceBar, 95);
-            totalBar = Math.min(totalBar, 95);
-
+        return processed.map((item, idx) => {
+            const totalBar = Math.min((item.total / maxTotal) * 100, 100);
             const isAsk = type === 'ask';
-            const priceColor = isAsk ? 'bg-[#3F151C]' : 'bg-[#174226]';
-            const textColor = isAsk ? 'text-[#DF2040]' : 'text-[#40BF6A]';
-
+            // UPDATED: Now 3 columns (Price, Amount, Total)
             return (
-                <div key={idx} className="grid grid-cols-4 text-sm font-normal overflow-hidden leading-[1]">
-                    <div className="relative col-span-2 p-1.5">
-                        <div className={`absolute inset-y-0 left-0 bar ${priceColor}`} style={{ width: `${priceBar.toFixed(1)}%` }}></div>
-                        <span className={`relative z-10 ${textColor}`}>{p.toFixed(1)}</span>
-                    </div>
-                    <span className="relative z-10 p-1.5">{q.toFixed(3)}</span>
+                <div key={idx} className="grid grid-cols-3 text-sm font-normal overflow-hidden leading-[1] cursor-pointer hover:bg-[#ffffff0d]" onClick={() => setPriceInput(item.price.toString())}>
+                    <span className={`relative z-10 p-1.5 ${isAsk ? 'text-[#DF2040]' : 'text-[#00BC8A]'}`}>{item.price.toFixed(4)}</span>
+                    <span className="relative z-10 p-1.5 text-right text-[#EEEEEE]">{item.amount.toFixed(2)}</span>
                     <div className="relative p-1.5">
-                        <div className="absolute inset-y-0 right-0 bar bg-[#2F2F34] text-[#EEEEEE]" style={{ width: `${totalBar.toFixed(1)}%` }}></div>
-                        <span className="relative z-10 flex justify-end">{total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                        <div className={`absolute inset-y-0 right-0 bar ${isAsk ? 'bg-[#3F151C]' : 'bg-[#174226]'}`} style={{ width: `${totalBar.toFixed(1)}%`, opacity: 0.5 }}></div>
+                        <span className="relative z-10 flex justify-end text-[#9D98A4]">{item.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                     </div>
                 </div>
             );
         });
     };
 
-    const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSliderValue(Number(e.target.value));
-    };
-
-    const getKnobPosition = () => {
-        return `calc(${sliderValue}% - 7px)`;
-    };
+    useEffect(() => {
+        if (chartContainerRef.current) {
+            chartContainerRef.current.innerHTML = '';
+            const script = document.createElement('script');
+            script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+            script.async = true;
+            script.innerHTML = JSON.stringify({
+                "autosize": true, "symbol": "BINANCE:POLUSDT", "interval": "60", "timezone": "Etc/UTC", "theme": "dark", "style": "1", "locale": "en", "hide_side_toolbar": false, "allow_symbol_change": false, "backgroundColor": "rgba(0,0,0,1)"
+            });
+            chartContainerRef.current.appendChild(script);
+        }
+    }, []);
 
     return (
-        <div className="font-poppins w-full min-h-screen bg-black p-4 xl:p-6 pt-8 xl:pt-12">
-            {/* Main Trading Grid */}
+        <div className="font-poppins w-full min-h-screen bg-black p-4 xl:p-6 pt-8 xl:pt-12 text-[#EEEEEE]">
             <section className="mb-6">
                 <div className="swap-main-grid 2xl:grid-cols-5 xl:grid-cols-4 md:grid-cols-3 grid-cols-1 gap-2">
-                    {/* COL 1: CHART & STATS */}
+
+                    {/* COL 1: CHART */}
                     <div className="2xl:col-span-3 md:col-span-2 flex flex-col h-full">
-                        {/* Stats Header */}
-                        <div className="bg-[#1A1C1E] p-2 mb-2 rounded-xl flex items-center shrink-0">
+                        <div className="bg-[#1A1C1E] p-2 mb-2 rounded-xl flex items-center shrink-0 border border-[#2F2F34]">
                             <div className="custom-select relative w-max min-w-[120px]">
-                                <button
-                                    className="select-btn w-full flex items-center justify-between gap-2 cursor-pointer"
-                                    onClick={(e) => { e.stopPropagation(); setMarketDropdownOpen(!marketDropdownOpen); }}
-                                >
+                                <button className="select-btn w-full flex items-center justify-between gap-2 cursor-pointer" onClick={(e) => { e.stopPropagation(); setMarketDropdownOpen(!marketDropdownOpen); }}>
                                     <span className="selected-item flex items-center gap-2 text-sm uppercase font-normal px-1.5 text-white">
-                                        <img src={selectedMarket.img} className="size-4 rounded-full" alt={selectedMarket.name} />
+                                        <img src={selectedMarket.img} className="size-4 rounded-full" alt="POL" />
                                         <span className="text-[#EEEEEE] text-base font-normal whitespace-nowrap">{selectedMarket.name}</span>
                                     </span>
-                                    <svg className={`transition-transform duration-200 min-w-2 ${marketDropdownOpen ? 'rotate-180' : ''}`} width="8" height="5" viewBox="0 0 8 5" fill="none">
-                                        <path d="M0.296477 1.71L2.88648 4.3C3.27648 4.69 3.90648 4.69 4.29648 4.3L6.88648 1.71C7.51648 1.08 7.06648 0 6.17648 0H0.996477C0.106477 0 -0.333523 1.08 0.296477 1.71Z" fill="#9D98A4" />
-                                    </svg>
                                 </button>
-                                {marketDropdownOpen && (
-                                    <ul className="absolute left-0 top-full w-full bg-[#0000005b] backdrop-blur-[5px] border border-[#FFFFFF1A] rounded shadow mt-1 z-10 min-w-[100px] text-sm">
-                                        {[
-                                            { name: 'BNB-USD', img: './assets/images/bnb-chain.svg' },
-                                            { name: 'ETH-USD', img: './assets/images/eth.svg' },
-                                            { name: 'USDT-USD', img: './assets/images/usdt.svg' }
-                                        ].map(market => (
-                                            <li key={market.name} onClick={() => setSelectedMarket(market)} className="p-2 flex items-center gap-2 hover:bg-[#5f7a17] cursor-pointer text-white">
-                                                <img src={market.img} className="size-4 rounded-full" alt={market.name} />
-                                                <span>{market.name}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
                             </div>
                             <div className="flex-grow overflow-x-auto flex items-start justify-between gap-3 text-nowrap px-4 md:px-6 no-scrollbar">
-                                <div className="min-w-fit">
-                                    <h3 className="text-[#74777D] font-normal text-[10px] uppercase">Price</h3>
-                                    <p className="text-[#EEEEEE] text-sm font-normal">3,049.4</p>
-                                </div>
-                                <div className="hidden sm:block min-w-fit">
-                                    <h3 className="text-[#74777D] font-normal text-[10px] uppercase">Index</h3>
-                                    <p className="text-[#EEEEEE] text-sm font-normal">3,050.0</p>
-                                </div>
-                                <div className="min-w-fit">
-                                    <h3 className="text-[#74777D] font-normal text-[10px] uppercase">24h Change</h3>
-                                    <p className="text-[#00BC8A] text-sm font-normal">9.06%</p>
-                                </div>
-                                <div className="hidden md:block min-w-fit">
-                                    <h3 className="text-[#74777D] font-normal text-[10px] uppercase"><span className="text-[#EEEEEE]">Funding</span> / Countdown</h3>
-                                    <p className="text-[#EEEEEE] text-sm font-normal"><span className="text-[#FF944D]">0.0100% </span>/ 07:22:17</p>
-                                </div>
-                                <div className="hidden lg:block min-w-fit">
-                                    <h3 className="text-[#74777D] font-normal text-[10px] uppercase">Open Interest</h3>
-                                    <p className="text-[#EE3F3F] text-sm font-normal">$88,026</p>
-                                </div>
-                                <div className="min-w-fit">
-                                    <h3 className="text-[#74777D] font-normal text-[10px] uppercase">24h Volume</h3>
-                                    <p className="text-[#EEEEEE] text-sm font-normal">$35,423.5</p>
-                                </div>
+                                <div className="min-w-fit"><h3 className="text-[#74777D] font-normal text-[10px] uppercase">Price</h3><p className="text-[#EEEEEE] text-sm font-normal">${(marketStats.price || 0).toFixed(4)}</p></div>
+                                <div className="min-w-fit"><h3 className="text-[#74777D] font-normal text-[10px] uppercase">24h Change</h3><p className={`text-sm font-normal ${(marketStats.change || 0) >= 0 ? 'text-[#00BC8A]' : 'text-[#DF2040]'}`}>{(marketStats.change || 0).toFixed(2)}%</p></div>
+                                <div className="hidden md:block min-w-fit"><h3 className="text-[#74777D] font-normal text-[10px] uppercase">Funding</h3><p className="text-[#FF944D] text-sm font-normal">0.0100%</p></div>
+                                <div className="hidden lg:block min-w-fit"><h3 className="text-[#74777D] font-normal text-[10px] uppercase">Open Interest</h3><p className="text-[#EEEEEE] text-sm font-normal">{((marketStats.price || 0) * 12500).toLocaleString()}</p></div>
                             </div>
                         </div>
+                        <div className="bg-[#1A1C1E] p-3 rounded-xl flex-1 flex flex-col overflow-hidden min-h-0 border border-[#2F2F34]">
+                            <div className="relative w-full flex-1 min-h-[300px]" ref={chartContainerRef}></div>
+                        </div>
+                    </div>
 
-                        {/* Chart */}
-                        <div className="bg-[#1A1C1E] p-3 rounded-xl flex-1 flex flex-col overflow-hidden min-h-0">
-                            <div className="pb-2 flex items-center gap-10 text-[#9D98A4] font-normal text-sm shrink-0">
-                                <button className="cursor-pointer text-[#EEEEEE]">Chart</button>
-                                <button className="cursor-pointer">Depth</button>
-                                <button className="cursor-pointer">Market Details</button>
+                    {/* COL 2: ORDERBOOK (Updated to 3 columns) */}
+                    <div className="h-full min-h-[450px] xl:min-h-0 p-[1px] rounded-xl bg-[radial-gradient(98%_49.86%_at_100.03%_100%,#75912B_0%,rgba(117,145,43,0.05)_100%)]">
+                        <div className="rounded-xl bg-[#121212] h-full overflow-hidden flex flex-col">
+                            <div className="text-[#9D98A4] text-sm font-normal py-3 px-2">Orderbook</div>
+                            <div className="grid grid-cols-3 text-[10px] text-[#A1A1A1] font-normal uppercase px-2 mb-1">
+                                <h3>Price</h3>
+                                <h3 className="text-right">Amount</h3>
+                                <h3 className="text-right">Total</h3>
                             </div>
-                            <div className="relative w-full flex-1 min-h-[300px]">
-                                <div className="absolute inset-0">
-                                    <div className="tradingview-widget-container h-full w-full">
-                                        <div className="tradingview-widget-container__widget h-full w-full" ref={chartContainerRef}></div>
-                                    </div>
-                                </div>
+                            <div className="no-scrollbar flex-1 overflow-y-auto min-h-0">
+                                <div>{renderOrderBookRow(asks, 'ask')}</div>
+                                <div className="py-2 border-y border-[#2F2F34] text-center my-1"><span className={`text-lg font-bold ${(marketStats.change || 0) >= 0 ? 'text-[#00BC8A]' : 'text-[#DF2040]'}`}>{(marketStats.price || 0).toLocaleString()}</span></div>
+                                <div>{renderOrderBookRow(bids, 'bid')}</div>
                             </div>
                         </div>
                     </div>
 
-                    {/* COL 2: ORDERBOOK */}
-                    <div className="h-full min-h-[450px] xl:min-h-0 p-[1px] rounded-xl bg-[radial-gradient(98%_49.86%_at_100.03%_100%,#75912B_0%,rgba(117,145,43,0.05)_100%),radial-gradient(24.21%_39.21%_at_0%_0%,rgba(255,255,255,0.81)_0%,rgba(255,255,255,0.19)_100%),radial-gradient(21.19%_40.1%_at_100.03%_0%,rgba(0,0,0,0.5)_0%,rgba(0,0,0,0)_100%)]">
-                        <div className="rounded-xl bg-[linear-gradient(90deg,#9D98A4_-340%,#000000_96.05%)] backdrop-blur-sm h-full overflow-hidden">
-                            <div className="h-full flex flex-col">
-                                <div className="text-white flex flex-col w-full h-full">
-                                    <div className="grid grid-cols-2 text-[#9D98A4] text-sm font-normal py-3 px-2 shrink-0">
-                                        <button className="text-[#EEEEEE] cursor-pointer text-left">Orderbook</button>
-                                        <button className="cursor-pointer text-right">Trades</button>
-                                    </div>
-                                    <div className="grid grid-cols-4 text-[10px] text-[#A1A1A1] font-normal uppercase px-2 mb-1 shrink-0">
-                                        <h3 className="col-span-2">Price</h3>
-                                        <h3>Quantity</h3>
-                                        <h3 className="text-right">Total</h3>
-                                    </div>
-                                    <div className="no-scrollbar flex-1 overflow-y-auto min-h-0">
-                                        <div>{renderOrderBookRow(asks, 'ask')}</div>
-                                        <div className="flex justify-between items-center text-sm font-normal p-3">
-                                            <h5 className="text-[#74777D]">2.4 / 0.08%</h5>
-                                            <div className="flex items-center gap-3">
-                                                <h6 className="text-[#EEEEEE]">0.1</h6>
-                                                <svg width="8" height="5" viewBox="0 0 8 5" fill="none">
-                                                    <path d="M0.296477 1.71L2.88648 4.3C3.27648 4.69 3.90648 4.69 4.29648 4.3L6.88648 1.71C7.51648 1.08 7.06648 0 6.17648 0H0.996477C0.106477 0 -0.333523 1.08 0.296477 1.71Z" fill="#74777D" />
-                                                </svg>
+                    {/* COL 3: LIMIT BOX */}
+                    {/* COL 3: LIMIT BOX (Updated Slider Logic) */}
+                    <div className="h-full min-h-[450px] xl:min-h-0 xl:col-span-1 md:col-span-3 p-[1px] rounded-xl bg-[radial-gradient(98%_49.86%_at_100.03%_100%,#75912B_0%,rgba(117,145,43,0.05)_100%),radial-gradient(24.21%_39.21%_at_0%_0%,rgba(255,255,255,0.81)_0%,rgba(255,255,255,0.19)_100%),radial-gradient(21.19%_40.1%_at_100.03%_0%,rgba(0,0,0,0.5)_0%,rgba(0,0,0,0)_100%)]">
+                        <div className="rounded-xl bg-[linear-gradient(0deg,#121212,#121212),linear-gradient(0deg,#000000,#000000),linear-gradient(0deg,#000000,#000000)] backdrop-blur-sm h-full p-4 flex flex-col">
+
+                            {/* TOP TABS */}
+                            <div className="flex gap-2 mb-4 bg-black p-1 rounded-lg shrink-0">
+                                {(['trade', 'deposit', 'withdraw'] as TabMode[]).map(m => (
+                                    <button
+                                        key={m}
+                                        onClick={() => setMode(m)}
+                                        className={`flex-1 text-[10px] uppercase py-2 rounded font-bold transition-all ${mode === m ? 'bg-[#2F2F34] text-white' : 'text-[#74777D] hover:text-[#9D98A4]'}`}
+                                    >
+                                        {m}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* DYNAMIC CONTENT */}
+                            <div className="flex-1 flex flex-col justify-between min-h-0 overflow-y-auto no-scrollbar">
+
+                                {/* --- TRADE MODE --- */}
+                                {mode === 'trade' && (
+                                    <div className="flex flex-col gap-3 h-full">
+
+                                        {/* A. Buy/Sell Toggle */}
+                                        <div className="grid grid-cols-2 gap-2 p-1 bg-[#1A1C1E] rounded-lg shrink-0">
+                                            <button
+                                                onClick={() => { setTradeSide('buy'); setSliderValue(0); setAmountInput(''); }}
+                                                className={`py-2 rounded-md text-sm font-bold transition-all ${tradeSide === 'buy' ? 'bg-[#00BC8A] text-white shadow-lg' : 'text-[#74777D] hover:text-white'}`}
+                                            >
+                                                Buy
+                                            </button>
+                                            <button
+                                                onClick={() => { setTradeSide('sell'); setSliderValue(0); setAmountInput(''); }}
+                                                className={`py-2 rounded-md text-sm font-bold transition-all ${tradeSide === 'sell' ? 'bg-[#DF2040] text-white shadow-lg' : 'text-[#74777D] hover:text-white'}`}
+                                            >
+                                                Sell
+                                            </button>
+                                        </div>
+
+                                        {/* B. Balance Display */}
+                                        <div className="flex justify-between text-xs text-[#9D98A4] px-1 shrink-0">
+                                            <span>Available:</span>
+                                            <span className="text-[#EEEEEE] font-mono">
+                                                {tradeSide === 'buy'
+                                                    ? `${userBalance.USDT.toFixed(2)} USDT`
+                                                    : `${userBalance.POL.toFixed(2)} POL`
+                                                }
+                                            </span>
+                                        </div>
+
+                                        {/* C. Inputs */}
+                                        <div className="space-y-3 shrink-0">
+                                            {/* Price Input */}
+                                            <div className="p-[1px] rounded-xl bg-[radial-gradient(98%_49.86%_at_100.03%_100%,#75912B_0%,rgba(117,145,43,0.05)_100%)]">
+                                                <div className="bg-[#000] rounded-xl p-3">
+                                                    <label className="text-[10px] text-[#74777D] block mb-1 uppercase">Price (USDT)</label>
+                                                    <input
+                                                        type="number"
+                                                        className="bg-transparent w-full text-white outline-none font-mono text-sm"
+                                                        placeholder="0.00"
+                                                        value={priceInput}
+                                                        onChange={e => setPriceInput(e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Amount Input */}
+                                            <div className="p-[1px] rounded-xl bg-[radial-gradient(98%_49.86%_at_100.03%_100%,#75912B_0%,rgba(117,145,43,0.05)_100%)]">
+                                                <div className="bg-[#000] rounded-xl p-3">
+                                                    <label className="text-[10px] text-[#74777D] block mb-1 uppercase">Amount (POL)</label>
+                                                    <input
+                                                        type="number"
+                                                        className="bg-transparent w-full text-white outline-none font-mono text-sm"
+                                                        placeholder="0.00"
+                                                        value={amountInput}
+                                                        onChange={(e) => {
+                                                            // Reverse calc: update slider when user types amount
+                                                            const val = Number(e.target.value);
+                                                            setAmountInput(e.target.value);
+                                                            if (tradeSide === 'buy') {
+                                                                const maxBuy = (userBalance.USDT / Number(priceInput || '1'));
+                                                                setSliderValue(Math.min((val / maxBuy) * 100, 100) || 0);
+                                                            } else {
+                                                                setSliderValue(Math.min((val / userBalance.POL) * 100, 100) || 0);
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
-                                        <div>{renderOrderBookRow(bids, 'bid')}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
-                    {/* COL 3: TRADING FORM */}
-                    <div className="h-full min-h-[450px] xl:min-h-0 xl:col-span-1 md:col-span-3 p-[1px] rounded-xl bg-[radial-gradient(98%_49.86%_at_100.03%_100%,#75912B_0%,rgba(117,145,43,0.05)_100%),radial-gradient(24.21%_39.21%_at_0%_0%,rgba(255,255,255,0.81)_0%,rgba(255,255,255,0.19)_100%),radial-gradient(21.19%_40.1%_at_100.03%_0%,rgba(0,0,0,0.5)_0%,rgba(0,0,0,0)_100%)]">
-                        <div className="rounded-xl bg-[linear-gradient(0deg,#121212,#121212),linear-gradient(0deg,#000000,#000000),linear-gradient(0deg,#000000,#000000)] backdrop-blur-sm h-full p-4 flex flex-col justify-between">
-                            <div className="space-y-3">
-                                <div>
-                                    <label htmlFor="priceInput" className="text-sm text-[#EEEEEE] font-normal mb-2 block">Limit</label>
-                                    <div className="p-[1px] rounded-xl bg-[radial-gradient(98%_49.86%_at_100.03%_100%,#75912B_0%,rgba(117,145,43,0.05)_100%),radial-gradient(24.21%_39.21%_at_0%_0%,rgba(255,255,255,0.81)_0%,rgba(255,255,255,0.19)_100%),radial-gradient(21.19%_40.1%_at_100.03%_0%,rgba(0,0,0,0.5)_0%,rgba(0,0,0,0)_100%)]">
-                                        <input id="priceInput" className="placeholder:text-[#80838A] text-sm text-[#EEEEEE] font-normal rounded-xl bg-[linear-gradient(0deg,#121212,#121212),linear-gradient(0deg,#000000,#000000),linear-gradient(0deg,#000000,#000000)] w-full p-3 focus:outline-none" type="text" placeholder="Price USD" />
-                                    </div>
-                                </div>
+                                        {/* D. Enhanced Slider */}
+                                    {/* D. Normal Slider UI */}
+                                        <div className="py-3 px-1 space-y-2 shrink-0">
+                                            {/* Standard Range Input */}
+                                            <input 
+                                                type="range" 
+                                                min="0" 
+                                                max="100" 
+                                                step="1"
+                                                value={sliderValue} 
+                                                onChange={(e) => {
+                                                    const val = Number(e.target.value);
+                                                    setSliderValue(val);
+                                                    
+                                                    // Calculation Logic
+                                                    if (tradeSide === 'buy') {
+                                                        if (!priceInput || Number(priceInput) === 0) return;
+                                                        const maxBuyUSDT = userBalance.USDT;
+                                                        const amountToSpend = (maxBuyUSDT * val) / 100;
+                                                        const amountToBuy = amountToSpend / Number(priceInput);
+                                                        setAmountInput(amountToBuy.toFixed(4));
+                                                    } else {
+                                                        const maxSellPOL = userBalance.POL;
+                                                        const amountToSell = (maxSellPOL * val) / 100;
+                                                        setAmountInput(amountToSell.toFixed(4));
+                                                    }
+                                                }}
+                                                className="w-full h-1.5 bg-[#2F2F34] rounded-lg appearance-none cursor-pointer"
+                                                style={{
+                                                    accentColor: tradeSide === 'buy' ? '#00BC8A' : '#DF2040' 
+                                                }}
+                                            />
 
-                                <div className="p-[1px] rounded-xl bg-[radial-gradient(98%_49.86%_at_100.03%_100%,#75912B_0%,rgba(117,145,43,0.05)_100%),radial-gradient(24.21%_39.21%_at_0%_0%,rgba(255,255,255,0.81)_0%,rgba(255,255,255,0.19)_100%),radial-gradient(21.19%_40.1%_at_100.03%_0%,rgba(0,0,0,0.5)_0%,rgba(0,0,0,0)_100%)]">
-                                    <div className="rounded-xl bg-[linear-gradient(0deg,#121212,#121212),linear-gradient(0deg,#000000,#000000),linear-gradient(0deg,#000000,#000000)] w-full p-3 flex items-center gap-2">
-                                        <h4 className="text-[#80838A] text-sm font-normal">Quantity</h4>
-                                        <div className="custom-select relative ml-auto">
+                                            {/* Percentage Labels (Clickable) */}
+                                            <div className="flex justify-between text-[10px] text-[#74777D] font-bold select-none">
+                                                {[0, 25, 50, 75, 100].map(p => (
+                                                    <span 
+                                                        key={p} 
+                                                        className="cursor-pointer hover:text-white transition-colors"
+                                                        onClick={() => {
+                                                            setSliderValue(p);
+                                                            // Trigger Calculation Logic manually for click
+                                                            if (tradeSide === 'buy') {
+                                                                if (!priceInput || Number(priceInput) === 0) return;
+                                                                const maxBuyUSDT = userBalance.USDT;
+                                                                const amountToSpend = (maxBuyUSDT * p) / 100;
+                                                                const amountToBuy = amountToSpend / Number(priceInput);
+                                                                setAmountInput(amountToBuy.toFixed(4));
+                                                            } else {
+                                                                const maxSellPOL = userBalance.POL;
+                                                                const amountToSell = (maxSellPOL * p) / 100;
+                                                                setAmountInput(amountToSell.toFixed(4));
+                                                            }
+                                                        }}
+                                                    >
+                                                        {p}%
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* E. Total */}
+                                        <div className="flex justify-between items-center bg-[#1A1C1E] p-2 rounded-lg border border-[#2F2F34] shrink-0">
+                                            <span className="text-[10px] text-[#74777D] uppercase">Total (USDT)</span>
+                                            <span className="text-sm text-[#EEEEEE] font-mono">{totalUSDT.toFixed(2)}</span>
+                                        </div>
+
+                                        {/* F. Action Button */}
+                                        <div className="mt-auto pt-2">
                                             <button
-                                                className="select-btn flex items-center gap-2 cursor-pointer"
-                                                onClick={(e) => { e.stopPropagation(); setTokenDropdownOpen(!tokenDropdownOpen); }}
+                                                onClick={handleTrade}
+                                                disabled={loading}
+                                                className={`w-full py-3.5 rounded-xl font-bold text-white transition-all transform active:scale-[0.98] 
+                                                    ${tradeSide === 'buy'
+                                                        ? 'bg-[#00BC8A] hover:bg-[#00A076] shadow-[0_4px_12px_rgba(0,188,138,0.2)]'
+                                                        : 'bg-[#DF2040] hover:bg-[#C01B37] shadow-[0_4px_12px_rgba(223,32,64,0.2)]'
+                                                    } disabled:opacity-50 disabled:cursor-not-allowed`}
                                             >
-                                                <span className="text-[#EEEEEE] text-sm font-normal">{selectedToken}</span>
-                                                <svg className={`transition-transform duration-200 ${tokenDropdownOpen ? 'rotate-180' : ''}`} width="8" height="5" viewBox="0 0 8 5" fill="none">
-                                                    <path d="M0.296477 1.71L2.88648 4.3C3.27648 4.69 3.90648 4.69 4.29648 4.3L6.88648 1.71C7.51648 1.08 7.06648 0 6.17648 0H0.996477C0.106477 0 -0.333523 1.08 0.296477 1.71Z" fill="#9D98A4" />
-                                                </svg>
+                                                {loading ? 'Processing...' : (tradeSide === 'buy' ? 'Buy POL' : 'Sell POL')}
                                             </button>
-                                            {tokenDropdownOpen && (
-                                                <ul className="absolute right-0 top-full bg-[#000000] backdrop-blur-[5px] border border-[#FFFFFF1A] rounded shadow mt-1 z-10 min-w-[100px] text-sm text-white">
-                                                    {['BNB', 'ETH', 'USDT'].map(token => (
-                                                        <li key={token} onClick={() => setSelectedToken(token)} className="p-2 hover:bg-[#5f7a17] cursor-pointer">
-                                                            {token}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            )}
                                         </div>
                                     </div>
-                                </div>
+                                )}
 
-                                <div className="py-2">
-                                    <div className="relative flex items-center">
-                                        <div ref={tickBarRef} className="tick-bar flex-1 h-4"></div>
-                                        <div
-                                            className="absolute size-4 rounded bg-[#1A1C1E] border border-[#FF6A00] pointer-events-none shadow-lg"
-                                            style={{ left: getKnobPosition() }}
-                                        ></div>
-                                        <input
-                                            type="range"
-                                            min="0"
-                                            max="100"
-                                            value={sliderValue}
-                                            onChange={handleSliderChange}
-                                            className="absolute inset-0 w-full opacity-0 cursor-pointer"
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-4 gap-1 mt-3 text-[#EEEEEE] text-sm font-bold">
-                                        {[25, 50, 75, 100].map(val => (
+                                {/* --- DEPOSIT & WITHDRAW MODE (Kept functional) --- */}
+                                {(mode === 'deposit' || mode === 'withdraw') && (
+                                    <div className="flex flex-col gap-4 h-full">
+                                        <div className="space-y-3">
+                                            {/* Asset Select */}
+                                            <div className="p-[1px] rounded-xl bg-[#2F2F34]">
+                                                <div className="bg-[#000] rounded-xl p-3">
+                                                    <label className="text-[10px] text-[#74777D] block mb-1 uppercase">Asset</label>
+                                                    <select
+                                                        className="bg-black text-white w-full outline-none text-sm cursor-pointer"
+                                                        value={selectedToken}
+                                                        onChange={e => setSelectedToken(e.target.value as AssetSymbol)}
+                                                    >
+                                                        <option value="POL">POL</option>
+                                                        <option value="USDT">USDT</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            {/* Amount Input */}
+                                            <div className="p-[1px] rounded-xl bg-[#2F2F34]">
+                                                <div className="bg-[#000] rounded-xl p-3">
+                                                    <label className="text-[10px] text-[#74777D] block mb-1 uppercase">Amount</label>
+                                                    <input
+                                                        type="number"
+                                                        className="bg-transparent w-full text-white outline-none font-mono text-sm"
+                                                        placeholder="0.00"
+                                                        value={amountInput}
+                                                        onChange={e => setAmountInput(e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="text-right text-xs text-[#9D98A4]">
+                                                Balance: <span className="text-white">{userBalance[selectedToken]?.toFixed(4)} {selectedToken}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-auto">
                                             <button
-                                                key={val}
-                                                className={`border border-[#272A30] bg-transparent rounded h-10 cursor-pointer ${sliderValue === val ? 'btn-active' : ''}`}
-                                                onClick={() => setSliderValue(val)}
+                                                onClick={() => handleAction(mode as 'deposit' | 'withdraw')}
+                                                disabled={loading}
+                                                className="w-full py-3.5 bg-[#E17726] rounded-xl font-bold text-white hover:bg-[#CD6116] transition-all shadow-[0_4px_12px_rgba(225,119,38,0.2)] disabled:opacity-50"
                                             >
-                                                {val}%
+                                                {loading ? 'Processing...' : (mode === 'deposit' ? 'Confirm Deposit' : 'Confirm Withdraw')}
                                             </button>
-                                        ))}
+                                        </div>
                                     </div>
-                                </div>
+                                )}
 
-                                <div className="py-2 flex items-center justify-between">
-                                    <h4 className="text-[#80838A] text-sm font-normal">Quantity</h4>
-                                    <svg width="21" height="21" viewBox="0 0 21 21" fill="none">
-                                        <path d="M1.00781 12.0762V11.2383H4.28906V12.0762H1.00781Z" fill="#00BC8A" />
-                                        <path d="M12.0457 6.932L9.04569 15.5H8.03769L11.0377 6.932H12.0457Z" fill="#EEEEEE" />
-                                        <path d="M17.0078 12.0762V11.2383H20.2891V12.0762H17.0078Z" fill="#EE3F3F" />
-                                    </svg>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-2 text-sm font-bold text-black mt-4">
-                                <button className="py-3 bg-[#40BF6A] rounded-lg cursor-pointer">Buy / Long</button>
-                                <button className="py-3 bg-[#DF2040] rounded-lg cursor-pointer">Sell / Short</button>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* Bottom Table Section */}
+            {/* BOTTOM TABLE: OPEN ORDERS (Updated with Cancel) */}
             <div className="p-[1px] rounded-xl bg-[radial-gradient(98%_49.86%_at_100.03%_100%,#75912B_0%,rgba(117,145,43,0.05)_100%)]">
-                <div className="rounded-xl bg-[linear-gradient(0deg,#121212,#121212)] p-4">
-                    <div className="flex items-center gap-4 pb-3">
-                        <button className="font-normal text-sm text-[#EEEEEE] px-3 py-2 cursor-pointer">Open Orders</button>
-                        <button className="font-normal text-sm text-[#9D98A4] px-3 py-2 cursor-pointer">Trade History</button>
+                <div className="rounded-xl bg-[#121212] p-4">
+                    <div className="flex gap-4 border-b border-[#2F2F34] pb-2 mb-2">
+                        <span className="text-white text-sm border-b-2 border-[#00BC8A] pb-2">My Open Orders</span>
                     </div>
-                    <div className="overflow-x-auto w-full no-scrollbar">
-                        <table className="w-full whitespace-nowrap">
-                            <thead>
-                                <tr className="text-[10px] text-[#8C8C8C] bg-[#1A1C1E] uppercase">
-                                    <th className="p-2 font-normal">Market</th>
-                                    <th className="p-2 font-normal">Quantity</th>
-                                    <th className="p-2 font-normal">Value</th>
-                                    <th className="p-2 font-normal">Entry Price</th>
-                                    <th className="p-2 font-normal">Index Price</th>
-                                    <th className="p-2 font-normal">Liquidation Price</th>
-                                    <th className="p-2 font-normal">Position Margin</th>
-                                    <th className="p-2 font-normal">Unrealized P&L (%)</th>
-                                    <th className="p-2 font-normal">Realized P&L</th>
-                                    <th className="p-2 font-normal">TP/SL</th>
-                                    <th className="p-2 font-normal">ADL</th>
-                                    <th className="p-2 font-normal text-[#626267]">Close All</th>
-                                </tr>
-                            </thead>
-                        </table>
-                    </div>
-                    <div className="mt-4 p-[1px] rounded-lg bg-[radial-gradient(98%_49.86%_at_100.03%_100%,#75912B_0%,rgba(117,145,43,0.05)_100%)]">
-                        <div className="rounded-lg bg-[linear-gradient(0deg,#121212,#121212)] p-4">
-                            <h3 className="text-center text-sm text-[#9D98A4] font-normal"> see your positions</h3>
+                    {myOpenOrders.length > 0 ? (
+                        <div className="overflow-x-auto w-full no-scrollbar">
+                            <table className="w-full text-sm text-[#EEEEEE]">
+                                <thead>
+                                    <tr className="text-[10px] text-[#74777D] uppercase border-b border-[#2F2F34]">
+                                        <th className="text-left py-2">Side</th>
+                                        <th className="text-right py-2">Price</th>
+                                        <th className="text-right py-2">Amount</th>
+                                        <th className="text-right py-2">Total (USDT)</th>
+                                        <th className="text-right py-2">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {myOpenOrders.map((order, i) => (
+                                        <tr key={i} className="border-b border-[#1A1C1E] hover:bg-[#ffffff05]">
+                                            <td className={`py-2 font-bold ${order.side === 'buy' ? 'text-[#00BC8A]' : 'text-[#DF2040]'}`}>{order.side?.toUpperCase()}</td>
+                                            <td className="text-right py-2">{Number(order.price).toFixed(4)}</td>
+                                            <td className="text-right py-2">{Number(order.amount).toFixed(4)}</td>
+                                            <td className="text-right py-2 text-[#9D98A4]">{(Number(order.price) * Number(order.amount)).toFixed(2)}</td>
+                                            <td className="text-right py-2">
+                                                <button onClick={() => handleCancel(order)} className="text-xs text-[#DF2040] hover:text-red-400 border border-[#DF2040] px-2 py-1 rounded">Cancel</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
-                    </div>
+                    ) : (
+                        <div className="text-center text-[#74777D] text-sm py-4">No open orders found for your wallet.</div>
+                    )}
                 </div>
             </div>
         </div>
