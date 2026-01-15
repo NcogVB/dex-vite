@@ -119,16 +119,6 @@ const LandingFooter = () => (
                                     Blog
                                 </a>
                             </li>
-                            <li>
-                                <a href="#" className="hover:text-[#C9FA49]">
-                                    Integration
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" className="hover:text-[#C9FA49]">
-                                    Download
-                                </a>
-                            </li>
                         </ul>
                     </div>
                     <div>
