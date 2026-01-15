@@ -89,7 +89,7 @@ const LandingFooter = () => (
                             </li>
                             <li>
                                 <a
-                                    href="https://www.instagram.com/ncogofficial?igsh=ZnJqMGlkYW00NWFt"
+                                    href="https://www.instagram.com/ncog_earth/#"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="hover:text-[#C9FA49]"
