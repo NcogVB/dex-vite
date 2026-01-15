@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 
 const AboutSection = () => {
     return (
@@ -56,12 +55,7 @@ const AboutSection = () => {
                         staking. We offer 24/7 DEX crypto trading with unified access to
                         the deepest liquidity pools in global digital asset markets.
                     </p>
-                    <Link
-                        to="/swap"
-                        className="text-[#C9FA49] bg-black md:text-base text-sm leading-[1] font-normal md:p-[20px_30px] p-[15px_25px] rounded-[40px] border border-[#C9FA49] transition-all duration-300 hover:bg-[#C9FA49] hover:text-black inline-block md:mt-12 mt-6"
-                    >
-                        Start Trading Now
-                    </Link>
+                
                 </div>
             </section>
 

@@ -25,26 +25,6 @@ const NewHeroSection = () => {
                     >
                         Get Started
                     </Link>
-                    <a
-                        href="#"
-                        className="flex items-center md:gap-4 gap-2 md:text-lg text-sm text-white font-normal hover:text-[#C9FA49]"
-                    >
-                        <span className="bg-[#C9FA4933] md:size-14 size-10 flex items-center justify-center rounded-full">
-                            <svg
-                                width="14"
-                                height="16"
-                                viewBox="0 0 14 16"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                            >
-                                <path
-                                    d="M12.3368 9.82499L3.20126 15.0453C1.86794 15.8072 0.208984 14.8444 0.208984 13.3088V8.0885V2.86819C0.208984 1.33255 1.86795 0.369807 3.20126 1.13171L12.3368 6.35201C13.6804 7.1198 13.6804 9.0572 12.3368 9.82499Z"
-                                    fill="#C9FA49"
-                                />
-                            </svg>
-                        </span>
-                        How It Works
-                    </a>
                 </div>
             </div>
         </section>

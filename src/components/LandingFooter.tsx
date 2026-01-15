@@ -61,7 +61,7 @@ const LandingFooter = () => (
                                 </a>
                             </li>
                             <li>
-                                <a href="#" className="hover:text-[#C9FA49]">
+                                <a href="https://ncog.earth/about.html" className="hover:text-[#C9FA49]" target="_blank" rel="noopener noreferrer">
                                     About Us
                                 </a>
                             </li>
@@ -83,7 +83,7 @@ const LandingFooter = () => (
                         </h3>
                         <ul className="font-normal lg:text-base text-sm tracking-[-0.32px] text-[#F1F1EF] lg:space-y-4 space-y-2">
                             <li>
-                                <a href="#" className="hover:text-[#C9FA49]">
+                                <a href="https://ncog.earth/contact.html" className="hover:text-[#C9FA49]">
                                     Contact Us
                                 </a>
                             </li>
@@ -161,23 +161,29 @@ const LandingFooter = () => (
                 </p>
                 <div className="flex items-center gap-[10px] text-[#F1F1EF]">
                     <a
-                        href=" https://www.facebook.com/share/1C7KpZPYnQ/"
+                        href="https://www.instagram.com/ncog_earth/#"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="bg-[#1E1E1E] hover:bg-[#C9FA49] hover:text-[#1E1E1E] size-[24px] rounded-[4px] flex justify-center items-center cursor-pointer"
                     >
                         <svg
-                            width="8"
+                            width="14"
                             height="14"
-                            viewBox="0 0 8 14"
-                            fill="currentcolor"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
                             xmlns="http://www.w3.org/2000/svg"
                         >
-                            <path d="M5.3346 8.0007H7.0013L7.668 5.334H5.3346V4.00065C5.3346 3.3144 5.3346 2.66732 6.668 2.66732H7.668V0.427384C7.4508 0.398554 6.63 0.333984 5.7632 0.333984C3.9536 0.333984 2.668 1.43856 2.668 3.46712V5.334H0.667969V8.0007H2.668V13.6673H5.3346V8.0007Z" />
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
                         </svg>
                     </a>
                     <a
-                        href="https://x.com/Ncog_Earth?t=DIlcGfcI8bBbp0BsG3p4TA&s=09"
+                        href="https://x.com/ncog_earth"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="bg-[#1E1E1E] hover:bg-[#C9FA49] hover:text-[#1E1E1E] size-[24px] rounded-[4px] flex justify-center items-center cursor-pointer"
@@ -193,7 +199,7 @@ const LandingFooter = () => (
                         </svg>
                     </a>
                     <a
-                        href="#"
+                        href="https://www.linkedin.com/company/ncog-earth/"
                         className="bg-[#1E1E1E] hover:bg-[#C9FA49] hover:text-[#1E1E1E] size-[24px] rounded-[4px] flex justify-center items-center cursor-pointer"
                     >
                         <svg

@@ -12,7 +12,9 @@
     },
     "dependencies": {
         "@layerzerolabs/lz-v2-utilities": "^3.0.151",
+        "@rainbow-me/rainbowkit": "^2.2.10",
         "@tailwindcss/vite": "^4.1.11",
+        "@tanstack/react-query": "^5.90.17",
         "@uniswap/sdk-core": "^7.7.2",
         "@uniswap/v3-sdk": "^3.25.2",
         "body-parser": "^2.2.1",
@@ -23,7 +25,9 @@
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
         "react-router-dom": "^7.7.0",
-        "tailwindcss": "^4.1.11"
+        "tailwindcss": "^4.1.11",
+        "viem": "^2.44.2",
+        "wagmi": "^2.19.5"
     },
     "devDependencies": {
         "@eslint/js": "^9.30.1",
