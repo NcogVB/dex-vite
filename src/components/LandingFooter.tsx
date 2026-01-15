@@ -115,7 +115,7 @@ const LandingFooter = () => (
                         </h3>
                         <ul className="font-normal lg:text-base text-sm tracking-[-0.32px] text-[#F1F1EF] lg:space-y-4 space-y-2">
                             <li>
-                                <a href="#" className="hover:text-[#C9FA49]">
+                                <a href="https://insights.ncog.earth/" className="hover:text-[#C9FA49]">
                                     Blog
                                 </a>
                             </li>
