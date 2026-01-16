@@ -55,8 +55,6 @@ const Footer = () => (
                         </a>
                     </div>
                     <div className="flex flex-col md:text-center ">
-                        <a href="#">Privacy Policy</a>
-                        <a href="#">Terms & Conditions</a>
                         <a
                             href=" https://www.facebook.com/share/1C7KpZPYnQ/"
                             target="_blank"
