@@ -121,28 +121,6 @@ const LandingFooter = () => (
                             </li>
                         </ul>
                     </div>
-                    <div>
-                        <h3 className="font-semibold text-sm tracking-[0.56px] text-[#F1F1EF] md:mb-6 mb-4 uppercase">
-                            UTILITIES
-                        </h3>
-                        <ul className="font-normal lg:text-base text-sm tracking-[-0.32px] text-[#F1F1EF] lg:space-y-4 space-y-2">
-                            <li>
-                                <a href="#" className="hover:text-[#C9FA49]">
-                                    Privacy Policy
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" className="hover:text-[#C9FA49]">
-                                    Terms & Conditions
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" className="hover:text-[#C9FA49]">
-                                    Licenses
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
                 </div>
             </div>
             <div className="border-t-[#292929] border-t border-solid flex md:flex-row flex-col-reverse justify-between gap-4 items-center md:py-8 py-4">
